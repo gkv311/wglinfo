@@ -377,7 +377,7 @@ public:
         // Try to create the core profile of highest OpenGL version supported by OCCT
         // (this will be done automatically by some drivers when requesting 3.2,
         //  but some will not (e.g. AMD Catalyst) since WGL_ARB_create_context_profile specification allows both implementations).
-        for (int aLowVer4 = 5; aLowVer4 >= 0 && aCtxTmp.myGlCtx == NULL; --aLowVer4)
+        for (int aLowVer4 = 7; aLowVer4 >= 0 && aCtxTmp.myGlCtx == NULL; --aLowVer4)
         {
           aCoreCtxAttribs[1] = 4;
           aCoreCtxAttribs[3] = aLowVer4;
