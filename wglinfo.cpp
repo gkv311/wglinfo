@@ -318,6 +318,47 @@ public:
     {
       ::glGetError();
     }
+
+    {
+      //if (checkGlExtension("GL_ATI_meminfo"))
+      GLint aMemInfo[4] = { -1, -1, -1, -1 };
+      ::glGetIntegerv (0x87FB, aMemInfo); // GL_VBO_FREE_MEMORY_ATI = 0x87FB
+      if (::glGetError() == GL_NO_ERROR && aMemInfo[0] != -1)
+      {
+        std::cout << "[WGL] OpenGL Free GPU memory: " << (aMemInfo[0] / 1024) << " MiB\n";
+      }
+    }
+    {
+      //if (checkGlExtension("GL_NVX_gpu_memory_info"))
+      GLint aDedicated = -1;
+      ::glGetIntegerv (0x9047, &aDedicated); // GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX = 0x9047
+      if (::glGetError() == GL_NO_ERROR && aDedicated != -1)
+      {
+        std::cout << "[WGL] OpenGL GPU memory: " << (aDedicated / 1024) << " MiB\n";
+        //GLint aDedicatedFree = -1;
+        //::glGetIntegerv (0x9049, &aDedicatedFree); // GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX = 0x9049
+        //std::cout << "[WGL] OpenGL Free GPU memory: " << (aDedicatedFree / 1024) << " MiB\n";
+      }
+    }
+
+    {
+      typedef INT  (WINAPI *wglGetGPUInfoAMD_t )(UINT theId, INT theProperty, GLenum theDataType, UINT theSize, void* theData);
+      typedef UINT (WINAPI *wglGetContextGPUIDAMD_t )(HGLRC theHglrc);
+      wglGetGPUInfoAMD_t      wglGetGPUInfoAMD      = (wglGetGPUInfoAMD_t      )wglGetProcAddress ("wglGetGPUInfoAMD");
+      wglGetContextGPUIDAMD_t wglGetContextGPUIDAMD = (wglGetContextGPUIDAMD_t )wglGetProcAddress ("wglGetContextGPUIDAMD");
+      //if (checkGlExtension (aWglExts, "WGL_AMD_gpu_association"))
+      if (wglGetGPUInfoAMD != NULL
+       && wglGetContextGPUIDAMD != NULL)
+      {
+        GLuint aVMemMiB = 0;
+        UINT anAmdId = wglGetContextGPUIDAMD (aCtxCompat.myGlCtx);
+        if (anAmdId != 0 && wglGetGPUInfoAMD (anAmdId, 0x21A3, GL_UNSIGNED_INT, sizeof(aVMemMiB), &aVMemMiB) > 0) // WGL_GPU_RAM_AMD = 0x21A3
+        {
+          std::cout << "[WGL] OpenGL GPU memory: " << aVMemMiB << " MiB\n";
+        }
+      }
+    }
+
     std::cout << "[WGL] OpenGL extensions:\n";
     printExtensions ((const char* )::glGetString (GL_EXTENSIONS));
 
