@@ -1,4 +1,4 @@
-// Copyright © Kirill Gavrilov, 2018
+// Copyright © Kirill Gavrilov, 2018-2019
 //
 // wglinfo is a small utility printing information about OpenGL library available in Windows system
 // in similar way as glxinfo does on Linux.
@@ -734,6 +734,7 @@ private:
   #define EGL_CONTEXT_CLIENT_VERSION        0x3098
   #define EGL_MATCH_NATIVE_PIXMAP           0x3041
   #define EGL_OPENGL_ES2_BIT                0x0004
+  #define EGL_OPENGL_ES3_BIT                0x0040
   #define EGL_VG_ALPHA_FORMAT               0x3088
   #define EGL_VG_ALPHA_FORMAT_NONPRE        0x308B
   #define EGL_VG_ALPHA_FORMAT_PRE           0x308C
@@ -878,34 +879,52 @@ public:
       EGL_ALPHA_SIZE,   0,
       EGL_DEPTH_SIZE,   24,
       EGL_STENCIL_SIZE, 8,
-      EGL_RENDERABLE_TYPE, theIsGles ? EGL_OPENGL_ES2_BIT : EGL_OPENGL_BIT,
+      EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT,
       EGL_NONE
     };
 
-    EGLint aNbConfigs = 0;
     EGLConfig anEglCfg = NULL;
-    if (eglChooseConfig (myEglDisp, aConfigAttribs, &anEglCfg, 1, &aNbConfigs) != EGL_TRUE
-     || anEglCfg == NULL)
+    for (int aGlesVer = theIsGles ? 3 : 2; aGlesVer >= 2; --aGlesVer)
     {
-      eglGetError();
-      aConfigAttribs[4 * 2 + 1] = 16; // try config with smaller depth buffer
+      EGLint aNbConfigs = 0;
+      aConfigAttribs[6 * 2 + 1] = theIsGles ? (aGlesVer == 3 ? EGL_OPENGL_ES3_BIT : EGL_OPENGL_ES2_BIT) : EGL_OPENGL_BIT;
+      aConfigAttribs[4 * 2 + 1] = 24;
       if (eglChooseConfig (myEglDisp, aConfigAttribs, &anEglCfg, 1, &aNbConfigs) != EGL_TRUE
        || anEglCfg == NULL)
       {
-        //std::cerr << "Error: EGL does not provide compatible configurations!\n";
-        return false;
+        eglGetError();
+        aConfigAttribs[4 * 2 + 1] = 16; // try config with smaller depth buffer
+        if (eglChooseConfig (myEglDisp, aConfigAttribs, &anEglCfg, 1, &aNbConfigs) != EGL_TRUE
+         || anEglCfg == NULL)
+        {
+          eglGetError();
+          continue;
+        }
       }
+      break;
+    }
+    if (anEglCfg == NULL)
+    {
+      //std::cerr << "Error: EGL does not provide compatible configurations!\n";
+      return false;
     }
 
+    const bool hasGLES3 = (aConfigAttribs[6 * 2 + 1] == EGL_OPENGL_ES3_BIT);
     if (eglBindAPI (theIsGles ? EGL_OPENGL_ES_API : EGL_OPENGL_API) != EGL_TRUE)
     {
       std::cerr << "Error: EGL does not provide " << (theIsGles ? "OpenGL ES" : "OpenGL") << " client!\n";
       return false;
     }
 
-    EGLint  anEglCtxAttribsArr[] = { EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE, EGL_NONE };
-    EGLint* anEglCtxAttribs = theIsGles ? anEglCtxAttribsArr : NULL;
+    EGLint  anEglCtxAttribsArr2[] = { EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE, EGL_NONE };
+    EGLint  anEglCtxAttribsArr3[] = { EGL_CONTEXT_CLIENT_VERSION, 3, EGL_NONE, EGL_NONE };
+    EGLint* anEglCtxAttribs = theIsGles ? (hasGLES3 ? anEglCtxAttribsArr3 : anEglCtxAttribsArr2) : NULL;
     myEglContext = eglCreateContext (myEglDisp, anEglCfg, EGL_NO_CONTEXT, anEglCtxAttribs);
+    if (myEglContext == EGL_NO_CONTEXT
+     && hasGLES3)
+    {
+      myEglContext = eglCreateContext (myEglDisp, anEglCfg, EGL_NO_CONTEXT, anEglCtxAttribsArr2);
+    }
     if (myEglContext == EGL_NO_CONTEXT)
     {
       std::cerr << "Error: EGL is unable to create OpenGL context!\n";
