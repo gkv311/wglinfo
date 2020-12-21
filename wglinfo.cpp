@@ -5,9 +5,7 @@
 //
 // In case, if libEGL.dll is in PATH, it also prints information about EGL/GLES.
 //
-// Distributed under the Boost Software License, Version 1.0.
-// See accompanying file license-boost.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt
+// This code is licensed under MIT license (see LICENSE.txt for details).
 
 #include <windows.h>
 

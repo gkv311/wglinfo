@@ -21,4 +21,4 @@ https://github.com/gkv311/wglinfo
 
 ## Licensing
 
-See the [LICENSE](LICENSE.md) file.
+See the [LICENSE](LICENSE.txt) file.
