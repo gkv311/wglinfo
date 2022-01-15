@@ -1,4 +1,4 @@
-// Copyright © Kirill Gavrilov, 2018-2019
+// Copyright © Kirill Gavrilov, 2018-2022
 //
 // wglinfo is a small utility printing information about OpenGL library available in Windows system
 // in similar way as glxinfo does on Linux.
@@ -91,6 +91,33 @@ private:
   }
 
 };
+
+//! Print integer value.
+static void printInt2d (int theInt)
+{
+  if (theInt < 0)
+  {
+    std::cout << " . ";
+  }
+  else
+  {
+    std::cout << std::setw(2) << theInt << " ";
+  }
+}
+
+//! Return color buffer class
+static const char* getColorBufferClass (int theNbColorBits, int theNbRedBits)
+{
+  if (theNbColorBits <= 8)
+  {
+    return "PseudoColor";
+  }
+  else if (theNbRedBits >= 10)
+  {
+    return "DeepColor";
+  }
+  return "TrueColor";
+}
 
 //! Format extensions as a comma separated list with line size fixed to 80.
 static void printExtensions (const char* theExt)
@@ -533,12 +560,16 @@ public:
 
       if (theIsVerbose)
       {
-        std::cout << "Visual ID: " << aFormatIter << "  depth=" << int(aFormat.cDepthBits) << "  class=" << (aFormat.cColorBits <= 8 ? "PseudoColor" : "TrueColor") << "\n"
-                  << "    bufferSize=" << int(aFormat.cColorBits) << " level=" << int(aFormat.bReserved) << " renderType=" << (aFormat.iPixelType == PFD_TYPE_RGBA ? "rgba" : "ci")
-                     << " doubleBuffer=" << (aFormat.dwFlags & PFD_DOUBLEBUFFER) << " stereo=" << (aFormat.dwFlags & PFD_STEREO) << "\n"
-                  << "    rgba: redSize=" << int(aFormat.cRedBits) << " greenSize=" << int(aFormat.cGreenBits) << " blueSize=" << int(aFormat.cBlueBits) << " alphaSize=" << int(aFormat.cAlphaBits) << "\n"
-                  << "    auxBuffers=" << int(aFormat.cAuxBuffers) << " depthSize=" << int(aFormat.cDepthBits) << " stencilSize=" << int(aFormat.cStencilBits) << "\n"
-                  << "    accum: redSize=" << int(aFormat.cAccumRedBits) << " greenSize=" << int(aFormat.cAccumGreenBits) << " blueSize=" << int(aFormat.cAccumBlueBits) << " alphaSize=" << int(aFormat.cAccumAlphaBits)<< "\n";
+        std::cout << "Visual ID: " << aFormatIter << "\n"
+                  << "    color: R" << int(aFormat.cRedBits) << "G" << int(aFormat.cGreenBits) << "B" << int(aFormat.cBlueBits) << "A" << int(aFormat.cAlphaBits)
+                                    << " (" << getColorBufferClass (aFormat.cColorBits, aFormat.cRedBits) << ", " << int(aFormat.cColorBits) << ")"
+                                    << " depth: " << int(aFormat.cDepthBits) << " stencil: " << int(aFormat.cStencilBits) << "\n"
+                  << "    doubleBuffer: " << ((aFormat.dwFlags & PFD_DOUBLEBUFFER) != 0)
+                                   << " stereo: " << ((aFormat.dwFlags & PFD_STEREO) != 0)
+                                   << " renderType: " << (aFormat.iPixelType == PFD_TYPE_RGBA ? "rgba" : "palette")
+                                   << " level: " << int(aFormat.bReserved) << "\n"
+                  << "    auxBuffers: " << int(aFormat.cAuxBuffers)
+                                        << " accum: R" << int(aFormat.cAccumRedBits) << "G" << int(aFormat.cAccumGreenBits) << "B" << int(aFormat.cAccumBlueBits) << "A" << int(aFormat.cAccumAlphaBits)<< "\n";
         continue;
       }
 
@@ -582,21 +613,6 @@ public:
       std::cout << "    visual  x  bf lv rg d st  r  g  b a  ax dp st accum buffs  ms \n";
       std::cout << "  id dep cl sp sz l  ci b ro sz sz sz sz bf th cl  r  g  b  a ns b\n";
       std::cout << "------------------------------------------------------------------\n\n";
-    }
-  }
-
-private:
-
-  //! Print integer value.
-  static void printInt2d (int theInt)
-  {
-    if (theInt < 0)
-    {
-      std::cout << " . ";
-    }
-    else
-    {
-      std::cout << std::setw(2) << theInt << " ";
     }
   }
 
@@ -747,6 +763,8 @@ private:
   typedef EGLBoolean (WINAPI *eglInitialize_t) (EGLDisplay dpy, EGLint *major, EGLint *minor);
   typedef EGLBoolean (WINAPI *eglTerminate_t) (EGLDisplay dpy);
   typedef EGLBoolean (WINAPI *eglMakeCurrent_t) (EGLDisplay dpy, EGLSurface draw, EGLSurface read, EGLContext ctx);
+  typedef EGLBoolean (WINAPI *eglGetConfigs_t) (EGLDisplay dpy, EGLConfig *configs, EGLint config_size, EGLint *num_config);
+  typedef EGLBoolean (WINAPI *eglGetConfigAttrib_t) (EGLDisplay dpy, EGLConfig config, EGLint attribute, EGLint *value);
   typedef EGLBoolean (WINAPI *eglChooseConfig_t) (EGLDisplay dpy, const EGLint *attrib_list, EGLConfig *configs, EGLint config_size, EGLint *num_config);
   typedef EGLBoolean (WINAPI *eglBindAPI_t) (EGLenum api);
   typedef EGLContext (WINAPI *eglCreateContext_t) (EGLDisplay dpy, EGLConfig config, EGLContext share_context, const EGLint *attrib_list);
@@ -786,6 +804,8 @@ public:
      || !findEglDllProcShort (eglInitialize)
      || !findEglDllProcShort (eglTerminate)
      || !findEglDllProcShort (eglMakeCurrent)
+     || !findEglDllProcShort (eglGetConfigs)
+     || !findEglDllProcShort (eglGetConfigAttrib)
      || !findEglDllProcShort (eglChooseConfig)
      || !findEglDllProcShort (eglBindAPI)
      || !findEglDllProcShort (eglCreateContext)
@@ -884,9 +904,9 @@ public:
     EGLConfig anEglCfg = NULL;
     for (int aGlesVer = theIsGles ? 3 : 2; aGlesVer >= 2; --aGlesVer)
     {
-      EGLint aNbConfigs = 0;
       aConfigAttribs[6 * 2 + 1] = theIsGles ? (aGlesVer == 3 ? EGL_OPENGL_ES3_BIT : EGL_OPENGL_ES2_BIT) : EGL_OPENGL_BIT;
       aConfigAttribs[4 * 2 + 1] = 24;
+      EGLint aNbConfigs = 0;
       if (eglChooseConfig (myEglDisp, aConfigAttribs, &anEglCfg, 1, &aNbConfigs) != EGL_TRUE
        || anEglCfg == NULL)
       {
@@ -980,6 +1000,113 @@ public:
     return true;
   }
 
+  void PrintEglConfigs (bool theIsVerbose)
+  {
+    struct EGLConfigAttribs
+    {
+      EGLint ConfigId;
+      EGLint ConfigCaveat;
+      EGLint RenderbableType;
+      EGLint BufferType;
+      EGLint SurfaceType;
+      EGLint ColorSize;
+      EGLint RedSize;
+      EGLint GreenSize;
+      EGLint BlueSize;
+      EGLint AlphaSize;
+      EGLint DepthSize;
+      EGLint StencilSize;
+    };
+
+    EGLint aNbConfigs = 0;
+    eglGetConfigs (myEglDisp, NULL, 0, &aNbConfigs);
+    EGLConfig* aConfigs = new EGLConfig[aNbConfigs];
+    memset (aConfigs, 0, sizeof(EGLConfig) * aNbConfigs);
+    if (eglGetConfigs (myEglDisp, aConfigs, aNbConfigs, &aNbConfigs) != EGL_TRUE)
+    {
+      delete[] aConfigs;
+      return;
+    }
+
+    std::cout <<"\n[EGL] " << aNbConfigs << " EGL Configs\n";
+    if (!theIsVerbose)
+    {
+      std::cout << "    visual  x  bf lv rg d st  r  g  b a  ax dp st accum buffs  ms \n";
+      std::cout << "  id dep cl sp sz l  ci b ro sz sz sz sz bf th cl  r  g  b  a ns b\n";
+      std::cout << "------------------------------------------------------------------\n";
+    }
+    for (int aCfgIter = 0; aCfgIter < aNbConfigs; ++aCfgIter)
+    {
+      const EGLConfig aCfg = aConfigs[aCfgIter];
+      EGLConfigAttribs anAttribs;
+      memset (&anAttribs, 0, sizeof(EGLConfigAttribs));
+      eglGetConfigAttrib (myEglDisp, aCfg, EGL_CONFIG_ID,         &anAttribs.ConfigId);
+      eglGetConfigAttrib (myEglDisp, aCfg, EGL_CONFIG_CAVEAT,     &anAttribs.ConfigCaveat);
+      eglGetConfigAttrib (myEglDisp, aCfg, EGL_RENDERABLE_TYPE,   &anAttribs.RenderbableType);
+      eglGetConfigAttrib (myEglDisp, aCfg, EGL_COLOR_BUFFER_TYPE, &anAttribs.BufferType);
+      eglGetConfigAttrib (myEglDisp, aCfg, EGL_SURFACE_TYPE,      &anAttribs.SurfaceType);
+      eglGetConfigAttrib (myEglDisp, aCfg, EGL_BUFFER_SIZE,       &anAttribs.ColorSize);
+      eglGetConfigAttrib (myEglDisp, aCfg, EGL_RED_SIZE,          &anAttribs.RedSize);
+      eglGetConfigAttrib (myEglDisp, aCfg, EGL_GREEN_SIZE,        &anAttribs.GreenSize);
+      eglGetConfigAttrib (myEglDisp, aCfg, EGL_BLUE_SIZE,         &anAttribs.BlueSize);
+      eglGetConfigAttrib (myEglDisp, aCfg, EGL_ALPHA_SIZE,        &anAttribs.AlphaSize);
+      eglGetConfigAttrib (myEglDisp, aCfg, EGL_DEPTH_SIZE,        &anAttribs.DepthSize);
+      eglGetConfigAttrib (myEglDisp, aCfg, EGL_STENCIL_SIZE,      &anAttribs.StencilSize);
+
+      if (theIsVerbose)
+      {
+        std::cout << "Config: " << aCfgIter << "\n"
+                  << "    color: R" << int(anAttribs.RedSize) << "G" << int(anAttribs.GreenSize) << "B" << int(anAttribs.BlueSize) << "A" << int(anAttribs.AlphaSize)
+                                    << " (" << getColorBufferClass (anAttribs.ColorSize, anAttribs.RedSize) << ", " << int(anAttribs.ColorSize) << ")"
+                                    << " depth: " << int(anAttribs.DepthSize) << " stencil: " << int(anAttribs.StencilSize) << "\n"
+                  << "    caveat: " << ((anAttribs.ConfigCaveat & EGL_SLOW_CONFIG) != 0 ? "slow " : " ")
+                                    << ((anAttribs.ConfigCaveat & EGL_NON_CONFORMANT_CONFIG) != 0 ? "non-conformant" : " ") << "\n"
+                  << "    renderableTypes: " << ((anAttribs.RenderbableType & EGL_OPENGL_ES2_BIT) != 0 ? "GLES2 " : " ")
+                                             << ((anAttribs.RenderbableType & EGL_OPENGL_ES3_BIT) != 0 ? "GLES3 " : " ")
+                                             << ((anAttribs.RenderbableType & EGL_OPENGL_BIT) != 0 ? "GL" : " ") << "\n";
+        continue;
+      }
+
+      std::cout << "0x" << std::hex << std::setw(3) << std::setfill('0') << aCfgIter << std::dec << std::setfill(' ') << " ";
+      std::cout << std::setw(2) << (int)anAttribs.ColorSize << " ";
+
+      std::cout << ((anAttribs.SurfaceType & EGL_WINDOW_BIT) != 0
+                 ? "wn "
+                 :  ((anAttribs.SurfaceType & EGL_PIXMAP_BIT) != 0
+                  ? "bm "
+                  : ".  "));
+
+      std::cout << " . " << std::setw(2) << (int)anAttribs.ColorSize << " ";
+      std::cout << " . ";
+      std::cout << " " << (anAttribs.BufferType == EGL_RGB_BUFFER ? "r" : "l") << " "
+                << '.' << " "
+                << " " << '.' << " ";
+      printInt2d (anAttribs.RedSize   && anAttribs.BufferType == EGL_RGB_BUFFER ? (int)anAttribs.RedSize   : -1);
+      printInt2d (anAttribs.GreenSize && anAttribs.BufferType == EGL_RGB_BUFFER ? (int)anAttribs.GreenSize : -1);
+      printInt2d (anAttribs.BlueSize  && anAttribs.BufferType == EGL_RGB_BUFFER ? (int)anAttribs.BlueSize  : -1);
+      printInt2d (anAttribs.AlphaSize && anAttribs.BufferType == EGL_RGB_BUFFER ? (int)anAttribs.AlphaSize : -1);
+      printInt2d (-1);
+      printInt2d (anAttribs.DepthSize   ? (int)anAttribs.DepthSize   : -1);
+      printInt2d (anAttribs.StencilSize ? (int)anAttribs.StencilSize : -1);
+      printInt2d (-1);
+      printInt2d (-1);
+      printInt2d (-1);
+      printInt2d (-1);
+
+      std::cout <<" . .\n";
+    }
+    delete[] aConfigs;
+
+    // table footer
+    if (!theIsVerbose)
+    {
+      std::cout << "------------------------------------------------------------------\n";
+      std::cout << "    visual  x  bf lv rg d st  r  g  b a  ax dp st accum buffs  ms \n";
+      std::cout << "  id dep cl sp sz l  ci b ro sz sz sz sz bf th cl  r  g  b  a ns b\n";
+      std::cout << "------------------------------------------------------------------\n\n";
+    }
+  }
+
 private:
 
   HMODULE myEglDll;
@@ -989,6 +1116,8 @@ private:
   eglInitialize_t eglInitialize;
   eglTerminate_t eglTerminate;
   eglMakeCurrent_t eglMakeCurrent;
+  eglGetConfigs_t eglGetConfigs;
+  eglGetConfigAttrib_t eglGetConfigAttrib;
   eglChooseConfig_t eglChooseConfig;
   eglBindAPI_t eglBindAPI;
   eglCreateContext_t eglCreateContext;
@@ -1051,8 +1180,15 @@ int main (int theNbArgs, char** theArgVec)
 
   if (toShowEgl)
   {
-    EglInfoWindow().PrintEglInfo (true);
-    EglInfoWindow().PrintEglInfo (false);
+    {
+      EglInfoWindow aEglCtx1;
+      aEglCtx1.PrintEglInfo (true);
+    }
+    {
+      EglInfoWindow aEglCtx2;
+      aEglCtx2.PrintEglInfo (false);
+      aEglCtx2.PrintEglConfigs (isVerbose);
+    }
   }
 
   return 0;
