@@ -222,8 +222,14 @@ private:
   typedef BOOL (WINAPI *wglChoosePixelFormatARB_t)(HDC theDevCtx, const int* theIntAttribs,
                                                    const float* theFloatAttribs, unsigned int theMaxFormats,
                                                    int* theFormatsOut, unsigned int* theNumFormatsOut);
+  typedef BOOL (WINAPI *wglGetPixelFormatAttribivARB_t)(HDC hdc, int iPixelFormat, int iLayerPlane, UINT nAttributes, const int *piAttributes, int   *piValues);
+  typedef BOOL (WINAPI *wglGetPixelFormatAttribfvARB_t)(HDC hdc, int iPixelFormat, int iLayerPlane, UINT nAttributes, const int *piAttributes, FLOAT *pfValues);
   typedef HGLRC (WINAPI *wglCreateContextAttribsARB_t)(HDC theDevCtx, HGLRC theShareContext, const int* theAttribs);
   typedef const GLubyte* (WINAPI *glGetStringi_t) (GLenum name, GLuint index);
+
+  #define WGL_COLORSPACE_EXT        0x309D
+  #define WGL_COLORSPACE_SRGB_EXT   0x3089
+  #define WGL_COLORSPACE_LINEAR_EXT 0x308A
 
 public:
   //! Empty constructor.
@@ -540,6 +546,9 @@ public:
   //!   ms      = no analog  - multisample buffers
   void PrintVisualInfoWgl (bool theIsVerbose)
   {
+    wglGetPixelFormatAttribivARB_t aGetAttribIProc = (wglGetPixelFormatAttribivARB_t )wglGetProcAddress ("wglGetPixelFormatAttribivARB");
+    //wglGetPixelFormatAttribfvARB_t aGetAttribFProc = (wglGetPixelFormatAttribfvARB_t )wglGetProcAddress ("wglGetPixelFormatAttribfvARB");
+
     const int aNbFormats = DescribePixelFormat (myDevCtx, 0, 0, NULL);
     std::cout <<"\n[WGL] " << aNbFormats << " WGL Visuals\n";
     if (!theIsVerbose)
@@ -560,9 +569,25 @@ public:
 
       if (theIsVerbose)
       {
+        const char* aColorSpace = "";
+        if (aGetAttribIProc != nullptr)
+        {
+          // fetch colorspace information using WGL_EXT_colorspace extension
+          int aColorAttribs[1] = { WGL_COLORSPACE_EXT };
+          int aColorSpaceInt[1] = { 0 };
+          if (aGetAttribIProc (myDevCtx, aFormatIter, 0, 1, aColorAttribs, aColorSpaceInt))
+          {
+            aColorSpace = *aColorSpaceInt == WGL_COLORSPACE_SRGB_EXT
+                        ? ", sRGB"
+                        : (*aColorSpaceInt == WGL_COLORSPACE_LINEAR_EXT
+                        ? ", Linear"
+                        : ", Unknown");
+          }
+        }
         std::cout << "Visual ID: " << aFormatIter << "\n"
                   << "    color: R" << int(aFormat.cRedBits) << "G" << int(aFormat.cGreenBits) << "B" << int(aFormat.cBlueBits) << "A" << int(aFormat.cAlphaBits)
-                                    << " (" << getColorBufferClass (aFormat.cColorBits, aFormat.cRedBits) << ", " << int(aFormat.cColorBits) << ")"
+                                    << " (" << getColorBufferClass (aFormat.cColorBits, aFormat.cRedBits) << ", " << int(aFormat.cColorBits)
+                                    << aColorSpace << ")"
                                     << " depth: " << int(aFormat.cDepthBits) << " stencil: " << int(aFormat.cStencilBits) << "\n"
                   << "    doubleBuffer: " << ((aFormat.dwFlags & PFD_DOUBLEBUFFER) != 0)
                                    << " stereo: " << ((aFormat.dwFlags & PFD_STEREO) != 0)
@@ -1154,7 +1179,7 @@ int main (int theNbArgs, char** theArgVec)
                 << "  -B: brief output, print only the basics.\n"
 	                 "  -v: Print visuals info in verbose form.\n"
 	                 "  -h: This information\n"
-                << "This wglinfo tool variation has been created by Kirill Gavrilov <kirill@sview.ru>\n";
+                << "This wglinfo tool variation has been created by Kirill Gavrilov Tartynskih <kirill@sview.ru>\n";
       return 0;
     }
     else
@@ -1174,6 +1199,13 @@ int main (int theNbArgs, char** theArgVec)
     WglInfoWindow aDummy (L"wglinfo_dummy");
     if (aDummy.CreateWindowHandle())
     {
+      if (!aDummy.SetWindowPixelFormat()
+       || !aDummy.CreateGlContext()
+       || !aDummy.MakeCurrent())
+      {
+        // wglGetPixelFormatAttribivARB is unavailable without context
+      }
+
       aDummy.PrintVisualInfoWgl (isVerbose);
     }
   }

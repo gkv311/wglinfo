@@ -1,8 +1,8 @@
 #include <windows.h>
 
 VS_VERSION_INFO VERSIONINFO
-FILEVERSION     22, 1, 0, 0
-PRODUCTVERSION  22, 1, 0, 0
+FILEVERSION     22, 3, 0, 0
+PRODUCTVERSION  22, 3, 0, 0
 FILEFLAGSMASK   VS_FFI_FILEFLAGSMASK
 FILEOS          VOS_NT
 FILETYPE        VFT_APP
@@ -12,10 +12,10 @@ BEGIN
   BEGIN BLOCK "040904E4" // Language type = U.S English(0x0409) and Character Set = Windows, Multilingual(0x04E4)
     BEGIN
       VALUE "FileDescription", "wglinfo\000"
-      VALUE "FileVersion", "22.01\000"
+      VALUE "FileVersion", "22.03\000"
       VALUE "LegalCopyright", "\251 2018-2022 Kirill Gavrilov Tartynskih\000"
       VALUE "ProductName", "wglinfo\000"
-      VALUE "ProductVersion", "22.01\000"
+      VALUE "ProductVersion", "22.03\000"
       VALUE "OfficialSite", "www.sview.ru\000"
       VALUE "Contacts", "kirill@sview.ru\000"
     END
