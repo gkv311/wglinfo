@@ -1027,6 +1027,11 @@ public:
 
   void PrintEglConfigs (bool theIsVerbose)
   {
+    if (myEglDll == NULL)
+    {
+      return;
+    }
+
     struct EGLConfigAttribs
     {
       EGLint ConfigId;
