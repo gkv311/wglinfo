@@ -545,6 +545,10 @@ public:
   //!   accum b = cAccumBlueBits  - # bits of blue in accumulation buffer
   //!   accum a = cAccumAlphaBits - # bits of alpha in accumulation buffer
   //!   ms      = no analog  - multisample buffers
+  //!   rdr     = dwFlags & (PFD_GENERIC_FORMAT | PFD_GENERIC_ACCELERATED)
+  //!                             - renderer (gdi (software only),
+  //!                                         mcd (mini-icd cooperating with generic driver),
+  //!                                         icd (standalone driver))
   void PrintVisualInfoWgl (bool theIsVerbose)
   {
     wglGetPixelFormatAttribivARB_t aGetAttribIProc = (wglGetPixelFormatAttribivARB_t )wglGetProcAddress ("wglGetPixelFormatAttribivARB");
@@ -555,8 +559,8 @@ public:
     if (!theIsVerbose)
     {
       std::cout << "    visual  x  bf lv rg d st  r  g  b a  ax dp st accum buffs  ms \n";
-      std::cout <<"  id dep cl sp sz l  ci b ro sz sz sz sz bf th cl  r  g  b  a ns b\n";
-      std::cout <<"------------------------------------------------------------------\n";
+      std::cout <<"  id dep cl sp sz l  ci b ro sz sz sz sz bf th cl  r  g  b  a ns b rdr\n";
+      std::cout <<"----------------------------------------------------------------------\n";
     }
     for (int aFormatIter = 1; aFormatIter <= aNbFormats; ++aFormatIter)
     {
@@ -567,6 +571,10 @@ public:
       {
         continue;
       }
+      const char* renderer;
+      if ((aFormat.dwFlags & PFD_GENERIC_FORMAT) == 0)            renderer = "icd";
+      else if ((aFormat.dwFlags & PFD_GENERIC_ACCELERATED) != 0)  renderer = "mcd";
+      else                                                        renderer = "gdi";
 
       if (theIsVerbose)
       {
@@ -595,7 +603,8 @@ public:
                                    << " renderType: " << (aFormat.iPixelType == PFD_TYPE_RGBA ? "rgba" : "palette")
                                    << " level: " << int(aFormat.bReserved) << "\n"
                   << "    auxBuffers: " << int(aFormat.cAuxBuffers)
-                                        << " accum: R" << int(aFormat.cAccumRedBits) << "G" << int(aFormat.cAccumGreenBits) << "B" << int(aFormat.cAccumBlueBits) << "A" << int(aFormat.cAccumAlphaBits)<< "\n";
+                                        << " accum: R" << int(aFormat.cAccumRedBits) << "G" << int(aFormat.cAccumGreenBits) << "B" << int(aFormat.cAccumBlueBits) << "A" << int(aFormat.cAccumAlphaBits)<< "\n"
+                  << "    target: " << rendertarget << "\n";
         continue;
       }
 
@@ -631,16 +640,16 @@ public:
       printInt2d (aFormat.cAccumBlueBits  ? (int)aFormat.cAccumBlueBits : -1);
       printInt2d (aFormat.cAccumAlphaBits ? (int)aFormat.cAccumAlphaBits : -1);
 
-      std::cout <<" . .\n";
+      std::cout <<" . . " << renderer << "\n";
     }
 
     // table footer
     if (!theIsVerbose)
     {
-      std::cout << "------------------------------------------------------------------\n";
-      std::cout << "    visual  x  bf lv rg d st  r  g  b a  ax dp st accum buffs  ms \n";
+      std::cout << "----------------------------------------------------------------------\n";
+      std::cout << "    visual  x  bf lv rg d st  r  g  b a  ax dp st accum buffs  ms  rdr\n";
       std::cout << "  id dep cl sp sz l  ci b ro sz sz sz sz bf th cl  r  g  b  a ns b\n";
-      std::cout << "------------------------------------------------------------------\n\n";
+      std::cout << "----------------------------------------------------------------------\n\n";
     }
   }
 
