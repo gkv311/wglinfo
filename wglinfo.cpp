@@ -593,6 +593,14 @@ public:
                         : ", Unknown");
           }
         }
+        const char* rendertarget;
+        if ((aFormat.dwFlags & (PFD_DRAW_TO_WINDOW | PFD_DRAW_TO_BITMAP)) == (PFD_DRAW_TO_WINDOW | PFD_DRAW_TO_BITMAP))
+            rendertarget = "window/bitmap";
+        else if ((aFormat.dwFlags & PFD_DRAW_TO_WINDOW) != 0)
+            rendertarget = "window";
+        else
+            rendertarget = "bitmap";
+
         std::cout << "Visual ID: " << aFormatIter << "\n"
                   << "    color: R" << int(aFormat.cRedBits) << "G" << int(aFormat.cGreenBits) << "B" << int(aFormat.cBlueBits) << "A" << int(aFormat.cAlphaBits)
                                     << " (" << getColorBufferClass (aFormat.cColorBits, aFormat.cRedBits) << ", " << int(aFormat.cColorBits)
@@ -604,7 +612,7 @@ public:
                                    << " level: " << int(aFormat.bReserved) << "\n"
                   << "    auxBuffers: " << int(aFormat.cAuxBuffers)
                                         << " accum: R" << int(aFormat.cAccumRedBits) << "G" << int(aFormat.cAccumGreenBits) << "B" << int(aFormat.cAccumBlueBits) << "A" << int(aFormat.cAccumAlphaBits)<< "\n"
-                  << "    target: " << rendertarget << "\n";
+                  << "    renderer: " << renderer << " target: " << rendertarget << "\n";
         continue;
       }
 
