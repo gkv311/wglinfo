@@ -526,6 +526,7 @@ public:
   //!   visual ~= pixel format descriptor
   //!   id      = pixel format number (integer from 1 - max pixel formats)
   //!   dep     = cColorBits      - color depth
+  //!   cl      = dwFlags & PFD_DRAW_TO_*  - render destination (window (wn), bitmap (bm), both (wb))
   //!   xsp     = no analog       - transparent pixel (currently always ".")
   //!   bfsz    = cColorBits      - framebuffer size (no analog in Win32?)
   //!   lvl     = bReserved       - overlay(>0), underlay(<0), main plane(0).
@@ -601,11 +602,13 @@ public:
       std::cout << "0x" << std::hex << std::setw(3) << std::setfill('0') << aFormatIter << std::dec << std::setfill(' ') << " ";
       std::cout << std::setw(2) << (int)aFormat.cColorBits << " ";
 
-      std::cout << ((aFormat.dwFlags & PFD_DRAW_TO_WINDOW) != 0
+      std::cout << ((aFormat.dwFlags & (PFD_DRAW_TO_WINDOW | PFD_DRAW_TO_BITMAP)) == (PFD_DRAW_TO_WINDOW | PFD_DRAW_TO_BITMAP)
+                ? "wb "
+                : ((aFormat.dwFlags & PFD_DRAW_TO_WINDOW) != 0
                  ? "wn "
                  :  ((aFormat.dwFlags & PFD_DRAW_TO_BITMAP) != 0
                   ? "bm "
-                  : ".  "));
+                  : ".  ")));
 
       std::cout << " . " << std::setw(2) << (int)aFormat.cColorBits << " ";
 
