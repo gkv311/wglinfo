@@ -9,6 +9,7 @@
 
 #include <windows.h>
 
+#include <string>
 #include <iomanip>
 #include <iostream>
 
@@ -579,7 +580,7 @@ public:
       if (theIsVerbose)
       {
         const char* aColorSpace = "";
-        if (aGetAttribIProc != nullptr)
+        if (aGetAttribIProc != NULL)
         {
           // fetch colorspace information using WGL_EXT_colorspace extension
           int aColorAttribs[1] = { WGL_COLORSPACE_EXT };
@@ -1183,7 +1184,7 @@ private:
 
 };
 
-int main (int theNbArgs, char** theArgVec)
+int actual_main (int theNbArgs, char** theArgVec)
 {
   bool isVerbose = false, toPrintVisuals = true, toShowEgl = true;
   for (int anArgIter = 1; anArgIter < theNbArgs; ++anArgIter)
@@ -1211,7 +1212,7 @@ int main (int theNbArgs, char** theArgVec)
     {
       std::cerr << "Syntax error! Unknown argument '" << theArgVec[anArgIter] << "'\n\n";
       char* anArgs[2] = { theArgVec[0], "-h" };
-      main (2, anArgs);
+      actual_main (2, anArgs);
       return 1;
     }
   }
@@ -1249,4 +1250,9 @@ int main (int theNbArgs, char** theArgVec)
   }
 
   return 0;
+}
+
+int main(int argc, char** argv)
+{
+  return actual_main(argc, argv);
 }
