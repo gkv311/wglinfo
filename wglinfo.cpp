@@ -15,6 +15,12 @@
 
 #include <GL/gl.h>
 
+#if defined(__GNUC__) && !defined(__INTEL_COMPILER) && !defined(__clang__)
+  #if (__GNUC__ > 8) || ((__GNUC__ == 8) && (__GNUC_MINOR__ >= 1))
+    #pragma GCC diagnostic ignored "-Wcast-function-type"
+  #endif
+#endif
+
 //! Window creation tool.
 struct GlWindow
 {
@@ -1184,7 +1190,7 @@ private:
 
 };
 
-int actual_main (int theNbArgs, char** theArgVec)
+static int actual_main (int theNbArgs, const char** theArgVec)
 {
   bool isVerbose = false, toPrintVisuals = true, toShowEgl = true;
   for (int anArgIter = 1; anArgIter < theNbArgs; ++anArgIter)
@@ -1211,7 +1217,7 @@ int actual_main (int theNbArgs, char** theArgVec)
     else
     {
       std::cerr << "Syntax error! Unknown argument '" << theArgVec[anArgIter] << "'\n\n";
-      char* anArgs[2] = { theArgVec[0], "-h" };
+      const char* anArgs[2] = { theArgVec[0], "-h" };
       actual_main (2, anArgs);
       return 1;
     }
@@ -1252,7 +1258,7 @@ int actual_main (int theNbArgs, char** theArgVec)
   return 0;
 }
 
-int main(int argc, char** argv)
+int main(int argc, const char** argv)
 {
   return actual_main(argc, argv);
 }

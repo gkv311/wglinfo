@@ -11,8 +11,10 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4.1.7
+      with:
+        fetch-depth: 0
 
-    - name: Set up MSVC
+    - name: Setup MSVC
       uses: ilammy/msvc-dev-cmd@v1.13.0
       with:
         arch: x64

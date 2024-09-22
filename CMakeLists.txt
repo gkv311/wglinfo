@@ -10,9 +10,19 @@ set (CMAKE_CXX_STANDARD 11)
 if (MSVC)
   set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /fp:precise /EHa /MP")
   string (REGEX REPLACE "/EHsc" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-  add_definitions (-D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE -DUNICODE)
+  add_definitions (-D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE)
+  # static linking with CRT
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+  #set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
 else()
   set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions -fPIC")
+  if (WIN32)
+    # force static linking to gcc C++ runtime libraries
+    set (CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ ${CMAKE_EXE_LINKER_FLAGS}")
+  endif()
+endif()
+if (WIN32)
+  add_definitions(-DUNICODE)
 endif()
 
 set (BUILD_TREAT_WARNINGS_AS_ERRORS OFF CACHE BOOL "Treat compilation warnings as errors")
@@ -37,8 +47,19 @@ endif()
 # Find OpenGL
 find_package (OpenGL REQUIRED)
 
+set (USED_SRCFILES "wglinfo.cpp")
+set (USED_RCFILE "")
+if (WIN32)
+  set (USED_RCFILE "wglinfo.rc")
+endif()
+
 # main project target
 add_executable (${PROJECT_NAME}
-  wglinfo.cpp
+  ${USED_SRCFILES} ${USED_RCFILE}
 )
 target_link_libraries (${PROJECT_NAME} PRIVATE ${OPENGL_LIBRARIES})
+
+# force static linking to winpthreads
+if (WIN32 AND CMAKE_COMPILER_IS_GNUCXX)
+  target_link_libraries (${PROJECT_NAME} PRIVATE -static gcc stdc++ winpthread -dynamic)
+endif()
