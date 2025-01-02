@@ -23,6 +23,10 @@ else()
 endif()
 if (WIN32)
   add_definitions(-DUNICODE)
+
+  # prevent implicit linkage with 'default' libraries
+  set (CMAKE_CXX_STANDARD_LIBRARIES "")
+  set (CMAKE_C_STANDARD_LIBRARIES "")
 endif()
 
 set (BUILD_TREAT_WARNINGS_AS_ERRORS OFF CACHE BOOL "Treat compilation warnings as errors")
@@ -57,6 +61,9 @@ endif()
 add_executable (${PROJECT_NAME}
   ${USED_SRCFILES} ${USED_RCFILE}
 )
+if (WIN32)
+  target_link_libraries (${PROJECT_NAME} PRIVATE gdi32 user32)
+endif()
 target_link_libraries (${PROJECT_NAME} PRIVATE ${OPENGL_LIBRARIES})
 
 # force static linking to winpthreads
