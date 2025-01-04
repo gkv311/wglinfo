@@ -1,5 +1,10 @@
 #include <windows.h>
 
+#ifdef __GNUC__
+// legacy syntax for MinGW
+CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "wglinfo.manifest"
+#endif
+
 VS_VERSION_INFO VERSIONINFO
 FILEVERSION     22, 3, 0, 0
 PRODUCTVERSION  22, 3, 0, 0

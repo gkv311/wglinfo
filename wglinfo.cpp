@@ -1258,7 +1258,81 @@ static int actual_main (int theNbArgs, const char** theArgVec)
   return 0;
 }
 
+//! Returns the CPU architecture used to build the program (may not match the system).
+static const char* getArchString()
+{
+#if defined(__amd64) || defined(__x86_64) || defined(_M_AMD64)
+  return "x86_64";
+#elif defined(__i386) || defined(_M_IX86) || defined(__X86__)|| defined(_X86_)
+  return "x86";
+#elif defined(__aarch64__) && defined(__LP64__)
+  return "AArch64 64-bit";
+#elif defined(__arm__) || defined(__arm64__)
+  #if defined(__ARM_ARCH_7A__)
+    return "ARMv7-A 32-bit";
+  #elif defined(__ARM_ARCH_7R__)
+    return "ARMv7-R 32-bit";
+  #elif defined(__ARM_ARCH_7M__)
+    return "ARMv7-M 32-bit";
+  #elif defined(__LP64__)
+    return "ARM 64-bit";
+  #else
+    return "ARM 32-bit";
+  #endif
+#else
+  return "UNKNOWN";
+#endif
+}
+
+//! Print build and system information.
+static void printSystemInfo()
+{
+  std::cout << "wglinfo " << getArchString() << " (built with ";
+#if defined(__INTEL_COMPILER)
+  std::cout << "Intel " << __INTEL_COMPILER << "";
+#elif defined(__BORLANDC__)
+  std::cout << "Borland C++";
+#elif defined(__clang__)
+  std::cout << "Clang " << __clang_major__ << "." << __clang_minor__ << "." << __clang_patchlevel__;
+#elif defined(_MSC_VER)
+  #if _MSC_VER < 1900
+    std::cout << "MS Visual C++ " << int(_MSC_VER/100-6) << "." << int((_MSC_VER/10)-60-10*(int)(_MSC_VER/100-6));
+  #else
+    std::cout << "MS Visual C++ " << int(_MSC_VER/100-5) << "." << int((_MSC_VER/10)-50-10*(int)(_MSC_VER/100-5));
+  #endif
+#elif defined(__GNUC__)
+  std::cout << "GCC " << __GNUC__ << "." << __GNUC_MINOR__ << "." << __GNUC_PATCHLEVEL__ << "";
+#else
+  std::cout << "unrecognized";
+#endif
+
+#if defined(__MINGW64__)
+  std::cout << "; MinGW64 " << __MINGW64_VERSION_MAJOR << "." << __MINGW64_VERSION_MINOR;
+#elif defined(__MINGW32__)
+  std::cout << "; MinGW32 " << __MINGW32_MAJOR_VERSION << "." << __MINGW32_MINOR_VERSION;
+#endif
+  std::cout << ")";
+
+// suppress GetVersionExW is deprecated warning
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4996)
+#endif
+  OSVERSIONINFOEXA aVerInfo; ZeroMemory(&aVerInfo, sizeof(aVerInfo));
+  aVerInfo.dwOSVersionInfoSize = sizeof(aVerInfo);
+  if (GetVersionExA((OSVERSIONINFOA* )&aVerInfo))
+  {
+    std::cout << " running on Windows " << aVerInfo.dwMajorVersion << "." << aVerInfo.dwMinorVersion << " [" << aVerInfo.dwBuildNumber << "]";
+  }
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+
+  std::cout << "\n\n";
+}
+
 int main(int argc, const char** argv)
 {
+  printSystemInfo();
   return actual_main(argc, argv);
 }

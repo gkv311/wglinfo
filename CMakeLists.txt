@@ -53,13 +53,15 @@ find_package (OpenGL REQUIRED)
 
 set (USED_SRCFILES "wglinfo.cpp")
 set (USED_RCFILE "")
+set (USED_MANFILES "")
 if (WIN32)
   set (USED_RCFILE "wglinfo.rc")
+  set (USED_MANFILES "wglinfo.manifest")
 endif()
 
 # main project target
 add_executable (${PROJECT_NAME}
-  ${USED_SRCFILES} ${USED_RCFILE}
+  ${USED_SRCFILES} ${USED_RCFILE} ${USED_MANFILES}
 )
 if (WIN32)
   target_link_libraries (${PROJECT_NAME} PRIVATE gdi32 user32)
