@@ -327,7 +327,7 @@ void NativeGlContext::PrintPlatformInfo()
       aWglExts = wglGetExtensionsStringARB(wglGetCurrentDC());
 
     // output header information
-    std::cout << "[" << myApi << "] WGL extensions:\n";
+    std::cout << "[" << myPlatform << "] WGL extensions:\n";
     printExtensions(aWglExts);
   }
 }
