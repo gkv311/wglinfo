@@ -51,11 +51,21 @@ endif()
 # Find OpenGL
 find_package (OpenGL REQUIRED)
 
-set (USED_SRCFILES "wglinfo.cpp")
+set (USED_SRCFILES
+  "BaseGlContext.h"
+  "BaseGlContext.cpp"
+  "EglGlContext.h"
+  "EglGlContext.cpp"
+  "NativeGlContext.h"
+  "NativeGlContext.cpp"
+  "NativeWindow.h"
+  "NativeWindow.cpp"
+  "wglinfo.cpp"
+)
 set (USED_RCFILE "")
 set (USED_MANFILES "")
 if (WIN32)
-  set (USED_RCFILE "wglinfo.rc")
+  set (USED_RCFILE   "wglinfo.rc")
   set (USED_MANFILES "wglinfo.manifest")
 endif()
 
