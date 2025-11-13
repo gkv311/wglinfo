@@ -1,4 +1,4 @@
-// Copyright © Kirill Gavrilov, 2018-2022
+// Copyright © Kirill Gavrilov, 2018-2025
 //
 // wglinfo is a small utility printing information about OpenGL library available in Windows system
 // in similar way as glxinfo does on Linux.
@@ -25,7 +25,7 @@
 struct GlWindow
 {
   //! Create a window handle.
-  static HWND Create (const wchar_t* theTitle)
+  static HWND Create(const wchar_t* theTitle)
   {
     WNDCLASSW aWinClass;
     aWinClass.lpszClassName = L"OpenGL";
@@ -33,7 +33,7 @@ struct GlWindow
     if (anAppInstance == NULL)
     {
       // only register the window class once
-      anAppInstance = GetModuleHandle (NULL);
+      anAppInstance = GetModuleHandleW(NULL);
       aWinClass.style         = CS_OWNDC;
       aWinClass.lpfnWndProc   = windowProcWgl;
       aWinClass.cbClsExtra    = 0;
@@ -43,7 +43,7 @@ struct GlWindow
       aWinClass.hCursor       = LoadCursorW(NULL, IDC_ARROW);
       aWinClass.hbrBackground = NULL;
       aWinClass.lpszMenuName  = NULL;
-      if (!RegisterClassW (&aWinClass))
+      if (!RegisterClassW(&aWinClass))
       {
         std::cerr << "Error: RegisterClass() failed, cannot register window class.\n";
         return NULL;
@@ -51,8 +51,9 @@ struct GlWindow
     }
 
     const DWORD anExStyle = WS_EX_TOOLWINDOW | WS_EX_WINDOWEDGE;
-    HWND aWin = CreateWindowExW (anExStyle, aWinClass.lpszClassName, theTitle, WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN,
-                                 2, 2, 4, 4, NULL, NULL, anAppInstance, NULL);
+    const DWORD aStyle    = WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
+    HWND aWin = CreateWindowExW(anExStyle, aWinClass.lpszClassName, theTitle, aStyle,
+                                2, 2, 4, 4, NULL, NULL, anAppInstance, NULL);
     if (aWin == NULL)
     {
       std::cerr << "Error: CreateWindow() failed, Cannot create a window.\n";
@@ -63,71 +64,63 @@ struct GlWindow
 private:
 
   //! Dummy window procedure.
-  static LRESULT WINAPI windowProcWgl (HWND theWin, UINT theMsg, WPARAM theParamW, LPARAM theParamL)
+  static LRESULT WINAPI windowProcWgl(HWND theWin, UINT theMsg, WPARAM theParamW, LPARAM theParamL)
   {
     switch (theMsg)
     {
       case WM_PAINT:
       {
         PAINTSTRUCT aPaint;
-        BeginPaint (theWin, &aPaint);
-        EndPaint   (theWin, &aPaint);
+        BeginPaint(theWin, &aPaint);
+        EndPaint  (theWin, &aPaint);
         return 0;
       }
       case WM_SIZE:
       {
-        ::glViewport (0, 0, LOWORD(theParamL), HIWORD(theParamL));
-        PostMessageW (theWin, WM_PAINT, 0, 0);
+        //::glViewport(0, 0, LOWORD(theParamL), HIWORD(theParamL));
+        PostMessageW(theWin, WM_PAINT, 0, 0);
         return 0;
       }
       case WM_CHAR:
       {
         if (theParamW == 27) // ESC key
-        {
-          PostQuitMessage (0);
-        }
+          PostQuitMessage(0);
+
         return 0;
       }
       case WM_CLOSE:
       {
-        ::PostQuitMessage (0);
+        ::PostQuitMessage(0);
         return 0;
       }
     }
-    return ::DefWindowProcW (theWin, theMsg, theParamW, theParamL);
+    return ::DefWindowProcW(theWin, theMsg, theParamW, theParamL);
   }
 
 };
 
 //! Print integer value.
-static void printInt2d (int theInt)
+static void printInt2d(int theInt)
 {
   if (theInt < 0)
-  {
     std::cout << " . ";
-  }
   else
-  {
     std::cout << std::setw(2) << theInt << " ";
-  }
 }
 
 //! Return color buffer class
-static const char* getColorBufferClass (int theNbColorBits, int theNbRedBits)
+static const char* getColorBufferClass(int theNbColorBits, int theNbRedBits)
 {
   if (theNbColorBits <= 8)
-  {
     return "PseudoColor";
-  }
   else if (theNbRedBits >= 10)
-  {
     return "DeepColor";
-  }
+
   return "TrueColor";
 }
 
 //! Format extensions as a comma separated list with line size fixed to 80.
-static void printExtensions (const char* theExt)
+static void printExtensions(const char* theExt)
 {
   static const int THE_LINE_LEN = 80;
   if (theExt == NULL)
@@ -170,7 +163,7 @@ static void printExtensions (const char* theExt)
         }
 
         aLineLen += aLen + 1;
-        std::cout.write (theExt + aStart, aLen);
+        std::cout.write(theExt + aStart, aLen);
         std::cout << (toBreak ? "." : ",");
       }
       aStart = aCharIter;
@@ -240,7 +233,7 @@ private:
 
 public:
   //! Empty constructor.
-  WglInfoWindow (const wchar_t* theName) : myWin (NULL), myDevCtx (NULL), myGlCtx (NULL), myName (theName) {}
+  WglInfoWindow(const wchar_t* theName) : myWin(NULL), myDevCtx(NULL), myGlCtx(NULL), myName(theName) {}
 
   //! Destructor.
   ~WglInfoWindow() { Release(); }
@@ -248,20 +241,20 @@ public:
   //! Release resources.
   void Release()
   {
-    //wglMakeCurrent (NULL, NULL);
+    //wglMakeCurrent(NULL, NULL);
     if (myWin != NULL && myDevCtx != NULL)
     {
-      ::ReleaseDC (myWin, myDevCtx);
+      ::ReleaseDC(myWin, myDevCtx);
       myDevCtx = NULL;
     }
     if (myGlCtx != NULL)
     {
-      ::wglDeleteContext (myGlCtx);
+      ::wglDeleteContext(myGlCtx);
       myGlCtx = NULL;
     }
     if (myWin != NULL)
     {
-      ::DestroyWindow (myWin);
+      ::DestroyWindow(myWin);
       myWin = NULL;
     }
   }
@@ -273,22 +266,22 @@ public:
   bool CreateWindowHandle()
   {
     Release();
-    myWin = GlWindow::Create (myName);
-    myDevCtx = ::GetDC (myWin);
+    myWin = GlWindow::Create(myName);
+    myDevCtx = ::GetDC(myWin);
     return true;
   }
 
   //! Calls SetPixelFormat().
-  bool SetWindowPixelFormat (int theFormat = -1)
+  bool SetWindowPixelFormat(int theFormat = -1)
   {
     PIXELFORMATDESCRIPTOR aFormat;
-    memset (&aFormat, 0, sizeof(aFormat));
+    memset(&aFormat, 0, sizeof(aFormat));
     aFormat.nSize      = sizeof(aFormat);
     aFormat.nVersion   = 1;
     aFormat.dwFlags    = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL;
     aFormat.iPixelType = PFD_TYPE_RGBA;
     aFormat.cColorBits = 32;
-    const int aFormatIndex = theFormat == -1 ? ::ChoosePixelFormat (myDevCtx, &aFormat) : theFormat;
+    const int aFormatIndex = theFormat == -1 ? ::ChoosePixelFormat(myDevCtx, &aFormat) : theFormat;
     if (aFormatIndex == 0)
     {
       std::cerr << "Error: ChoosePixelFormat() failed, Cannot find a suitable pixel format.\n";
@@ -297,9 +290,9 @@ public:
 
     if (theFormat != -1)
     {
-      ::DescribePixelFormat (myDevCtx, aFormatIndex, sizeof(PIXELFORMATDESCRIPTOR), &aFormat);
+      ::DescribePixelFormat(myDevCtx, aFormatIndex, sizeof(PIXELFORMATDESCRIPTOR), &aFormat);
     }
-    if (::SetPixelFormat (myDevCtx, aFormatIndex, &aFormat) == FALSE)
+    if (::SetPixelFormat(myDevCtx, aFormatIndex, &aFormat) == FALSE)
     {
       std::cerr << "Error: SetPixelFormat(" << aFormatIndex << ") failed with error code " << GetLastError() << "\n";
       return false;
@@ -310,19 +303,19 @@ public:
   //! Create a GL context.
   bool CreateGlContext()
   {
-    myGlCtx = myDevCtx != NULL ? ::wglCreateContext (myDevCtx) : NULL;
+    myGlCtx = myDevCtx != NULL ? ::wglCreateContext(myDevCtx) : NULL;
     return myGlCtx != NULL;
   }
 
   //! Make this GL context active in current thread.
-  bool MakeCurrent() { return myGlCtx != NULL && ::wglMakeCurrent (myDevCtx, myGlCtx); }
+  bool MakeCurrent() { return myGlCtx != NULL && ::wglMakeCurrent(myDevCtx, myGlCtx); }
 
 public:
 
   //! Print information about OpenGL through WGL.
   static bool PrintWglInfo()
   {
-    WglInfoWindow aCtxCompat (L"wglinfo");
+    WglInfoWindow aCtxCompat(L"wglinfo");
     if (!aCtxCompat.CreateWindowHandle()
      || !aCtxCompat.SetWindowPixelFormat()
      || !aCtxCompat.CreateGlContext()
@@ -330,37 +323,32 @@ public:
     {
       return false;
     }
-    ::ShowWindow (aCtxCompat.myWin, SW_HIDE);
+    ::ShowWindow(aCtxCompat.myWin, SW_HIDE);
 
     // print WGL info
     const char* aWglExts = NULL;
     {
-      wglGetExtensionsStringARB_t wglGetExtensionsStringARB = (wglGetExtensionsStringARB_t )wglGetProcAddress ("wglGetExtensionsStringARB");
+      wglGetExtensionsStringARB_t wglGetExtensionsStringARB = (wglGetExtensionsStringARB_t )wglGetProcAddress("wglGetExtensionsStringARB");
       if (wglGetExtensionsStringARB != NULL)
-      {
-        aWglExts = wglGetExtensionsStringARB (wglGetCurrentDC());
-      }
+        aWglExts = wglGetExtensionsStringARB(wglGetCurrentDC());
+
       // output header information
       std::cout << "[WGL] WGL extensions:\n";
-      printExtensions (aWglExts);
+      printExtensions(aWglExts);
     }
 
-    std::cout << "[WGL] OpenGL vendor string: "   << ::glGetString (GL_VENDOR)   << "\n";
-    std::cout << "[WGL] OpenGL renderer string: " << ::glGetString (GL_RENDERER) << "\n";
-    std::cout << "[WGL] OpenGL version string: "  << ::glGetString (GL_VERSION)  << "\n";
-    if (const char* aGlslVer = (const char* )::glGetString (GL_SHADING_LANGUAGE_VERSION))
-    {
+    std::cout << "[WGL] OpenGL vendor string: "   << ::glGetString(GL_VENDOR)   << "\n";
+    std::cout << "[WGL] OpenGL renderer string: " << ::glGetString(GL_RENDERER) << "\n";
+    std::cout << "[WGL] OpenGL version string: "  << ::glGetString(GL_VERSION)  << "\n";
+    if (const char* aGlslVer = (const char* )::glGetString(GL_SHADING_LANGUAGE_VERSION))
       std::cout << "[WGL] OpenGL shading language version string: " << aGlslVer << "\n";
-    }
     else
-    {
       ::glGetError();
-    }
 
     {
       //if (checkGlExtension("GL_ATI_meminfo"))
       GLint aMemInfo[4] = { -1, -1, -1, -1 };
-      ::glGetIntegerv (0x87FB, aMemInfo); // GL_VBO_FREE_MEMORY_ATI = 0x87FB
+      ::glGetIntegerv(0x87FB, aMemInfo); // GL_VBO_FREE_MEMORY_ATI = 0x87FB
       if (::glGetError() == GL_NO_ERROR && aMemInfo[0] != -1)
       {
         std::cout << "[WGL] OpenGL Free GPU memory: " << (aMemInfo[0] / 1024) << " MiB\n";
@@ -369,7 +357,7 @@ public:
     {
       //if (checkGlExtension("GL_NVX_gpu_memory_info"))
       GLint aDedicated = -1;
-      ::glGetIntegerv (0x9047, &aDedicated); // GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX = 0x9047
+      ::glGetIntegerv(0x9047, &aDedicated); // GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX = 0x9047
       if (::glGetError() == GL_NO_ERROR && aDedicated != -1)
       {
         std::cout << "[WGL] OpenGL GPU memory: " << (aDedicated / 1024) << " MiB\n";
@@ -382,15 +370,14 @@ public:
     {
       typedef INT  (WINAPI *wglGetGPUInfoAMD_t )(UINT theId, INT theProperty, GLenum theDataType, UINT theSize, void* theData);
       typedef UINT (WINAPI *wglGetContextGPUIDAMD_t )(HGLRC theHglrc);
-      wglGetGPUInfoAMD_t      wglGetGPUInfoAMD      = (wglGetGPUInfoAMD_t      )wglGetProcAddress ("wglGetGPUInfoAMD");
-      wglGetContextGPUIDAMD_t wglGetContextGPUIDAMD = (wglGetContextGPUIDAMD_t )wglGetProcAddress ("wglGetContextGPUIDAMD");
+      wglGetGPUInfoAMD_t      wglGetGPUInfoAMD      = (wglGetGPUInfoAMD_t      )wglGetProcAddress("wglGetGPUInfoAMD");
+      wglGetContextGPUIDAMD_t wglGetContextGPUIDAMD = (wglGetContextGPUIDAMD_t )wglGetProcAddress("wglGetContextGPUIDAMD");
       //if (checkGlExtension (aWglExts, "WGL_AMD_gpu_association"))
-      if (wglGetGPUInfoAMD != NULL
-       && wglGetContextGPUIDAMD != NULL)
+      if (wglGetGPUInfoAMD != NULL && wglGetContextGPUIDAMD != NULL)
       {
         GLuint aVMemMiB = 0;
-        UINT anAmdId = wglGetContextGPUIDAMD (aCtxCompat.myGlCtx);
-        if (anAmdId != 0 && wglGetGPUInfoAMD (anAmdId, 0x21A3, GL_UNSIGNED_INT, sizeof(aVMemMiB), &aVMemMiB) > 0) // WGL_GPU_RAM_AMD = 0x21A3
+        UINT anAmdId = wglGetContextGPUIDAMD(aCtxCompat.myGlCtx);
+        if (anAmdId != 0 && wglGetGPUInfoAMD(anAmdId, 0x21A3, GL_UNSIGNED_INT, sizeof(aVMemMiB), &aVMemMiB) > 0) // WGL_GPU_RAM_AMD = 0x21A3
         {
           std::cout << "[WGL] OpenGL GPU memory: " << aVMemMiB << " MiB\n";
         }
@@ -398,28 +385,25 @@ public:
     }
 
     std::cout << "[WGL] OpenGL extensions:\n";
-    printExtensions ((const char* )::glGetString (GL_EXTENSIONS));
+    printExtensions((const char* )::glGetString(GL_EXTENSIONS));
 
     // in WGL world wglGetProcAddress() returns NULL if extensions is unavailable,
     // so that checking for extension string can be skipped
     //if (checkGlExtension (aWglExts, "WGL_ARB_pixel_format"))
     //if (checkGlExtension (aWglExts, "WGL_ARB_create_context_profile"))
-    wglChoosePixelFormatARB_t    aChoosePixProc = (wglChoosePixelFormatARB_t    )wglGetProcAddress ("wglChoosePixelFormatARB");
-    wglCreateContextAttribsARB_t aCreateCtxProc = (wglCreateContextAttribsARB_t )wglGetProcAddress ("wglCreateContextAttribsARB");
+    wglChoosePixelFormatARB_t    aChoosePixProc = (wglChoosePixelFormatARB_t    )wglGetProcAddress("wglChoosePixelFormatARB");
+    wglCreateContextAttribsARB_t aCreateCtxProc = (wglCreateContextAttribsARB_t )wglGetProcAddress("wglCreateContextAttribsARB");
     for (int aCtxIter = 0; aCtxIter < (aChoosePixProc != NULL ? 2 : 0); ++aCtxIter)
     {
       const bool isDebugCtx = false;
       const bool isCoreCtx = aCtxIter == 0;
       if (isCoreCtx && aCreateCtxProc == NULL)
-      {
         continue;
-      }
 
-      WglInfoWindow aCtxTmp (isCoreCtx ? L"wglinfo_core_profile" : L"wglinfo_ms_soft");
+      WglInfoWindow aCtxTmp(isCoreCtx ? L"wglinfo_core_profile" : L"wglinfo_ms_soft");
       if (!aCtxTmp.CreateWindowHandle())
-      {
         break;
-      }
+
       const int aPixAttribs[] =
       {
         WGL_DRAW_TO_WINDOW_ARB, GL_TRUE,
@@ -435,9 +419,9 @@ public:
       };
       unsigned int aFrmtsNb = 0;
       int aPixelFrmtId = 0;
-      if (!aChoosePixProc (aCtxTmp.myDevCtx, aPixAttribs, NULL, 1, &aPixelFrmtId, &aFrmtsNb)
+      if (!aChoosePixProc(aCtxTmp.myDevCtx, aPixAttribs, NULL, 1, &aPixelFrmtId, &aFrmtsNb)
        ||  aPixelFrmtId == 0
-       || !aCtxTmp.SetWindowPixelFormat (aPixelFrmtId))
+       || !aCtxTmp.SetWindowPixelFormat(aPixelFrmtId))
       {
         continue;
       }
@@ -460,71 +444,69 @@ public:
         {
           aCoreCtxAttribs[1] = 4;
           aCoreCtxAttribs[3] = aLowVer4;
-          aCtxTmp.myGlCtx = aCreateCtxProc (aCtxTmp.myDevCtx, NULL, aCoreCtxAttribs);
+          aCtxTmp.myGlCtx = aCreateCtxProc(aCtxTmp.myDevCtx, NULL, aCoreCtxAttribs);
         }
         for (int aLowVer3 = 3; aLowVer3 >= 2 && aCtxTmp.myGlCtx == NULL; --aLowVer3)
         {
           aCoreCtxAttribs[1] = 3;
           aCoreCtxAttribs[3] = aLowVer3;
-          aCtxTmp.myGlCtx = aCreateCtxProc (aCtxTmp.myDevCtx, NULL, aCoreCtxAttribs);
+          aCtxTmp.myGlCtx = aCreateCtxProc(aCtxTmp.myDevCtx, NULL, aCoreCtxAttribs);
         }
-        if (aCtxTmp.myGlCtx == NULL
-        || !aCtxTmp.MakeCurrent())
+        if (aCtxTmp.myGlCtx == NULL || !aCtxTmp.MakeCurrent())
         {
           continue;
         }
       }
-      else if (!aCtxTmp.CreateGlContext()
-            || !aCtxTmp.MakeCurrent())
+      else if (!aCtxTmp.CreateGlContext() || !aCtxTmp.MakeCurrent())
       {
         continue;
       }
 
       if (isCoreCtx)
       {
-        std::cout << "[WGL] OpenGL (core profile) vendor string: "   << ::glGetString (GL_VENDOR) << "\n";
-        std::cout << "[WGL] OpenGL (core profile) renderer string: " << ::glGetString (GL_RENDERER) << "\n";
-        std::cout << "[WGL] OpenGL (core profile) version string: "  << ::glGetString (GL_VERSION) << "\n";
-        std::cout << "[WGL] OpenGL (core profile) shading language version string: " << (const char* )::glGetString (GL_SHADING_LANGUAGE_VERSION) << "\n";
+        std::cout << "[WGL] OpenGL (core profile) vendor string: "   << ::glGetString(GL_VENDOR) << "\n";
+        std::cout << "[WGL] OpenGL (core profile) renderer string: " << ::glGetString(GL_RENDERER) << "\n";
+        std::cout << "[WGL] OpenGL (core profile) version string: "  << ::glGetString(GL_VERSION) << "\n";
+        std::cout << "[WGL] OpenGL (core profile) shading language version string: " << (const char* )::glGetString(GL_SHADING_LANGUAGE_VERSION) << "\n";
         std::cout << "[WGL] OpenGL (core profile) extensions:\n";
 
-        glGetStringi_t aGetStringi = (glGetStringi_t )wglGetProcAddress ("glGetStringi");
+        glGetStringi_t aGetStringi = (glGetStringi_t )wglGetProcAddress("glGetStringi");
         if (aGetStringi != NULL)
         {
           GLint anExtNb = 0;
-          ::glGetIntegerv (GL_NUM_EXTENSIONS, &anExtNb);
+          ::glGetIntegerv(GL_NUM_EXTENSIONS, &anExtNb);
           std::string aList;
           for (GLint anExtIter = 0; anExtIter < anExtNb; ++anExtIter)
           {
-            const char* anExtension = (const char* )aGetStringi (GL_EXTENSIONS, (GLuint )anExtIter);
+            const char* anExtension = (const char* )aGetStringi(GL_EXTENSIONS, GLuint(anExtIter));
             if (anExtension != NULL)
             {
-              aList += std::string (anExtension);
-              aList += std::string (" ");
+              aList += std::string(anExtension);
+              aList += std::string(" ");
             }
             //const size_t aTestExtNameLen = strlen (anExtension);
           }
-          printExtensions (aList.c_str());
+          printExtensions(aList.c_str());
         }
       }
       else
       {
-        std::cout << "[WGL] OpenGL (software) vendor string: "   << ::glGetString (GL_VENDOR) << "\n";
-        std::cout << "[WGL] OpenGL (software) renderer string: " << ::glGetString (GL_RENDERER) << "\n";
-        std::cout << "[WGL] OpenGL (software) version string: "  << ::glGetString (GL_VERSION) << "\n";
+        std::cout << "[WGL] OpenGL (software) vendor string: "   << ::glGetString(GL_VENDOR) << "\n";
+        std::cout << "[WGL] OpenGL (software) renderer string: " << ::glGetString(GL_RENDERER) << "\n";
+        std::cout << "[WGL] OpenGL (software) version string: "  << ::glGetString(GL_VERSION) << "\n";
         std::cout << "[WGL] OpenGL (software) extensions:\n";
-        printExtensions ((const char* )::glGetString (GL_EXTENSIONS));
+        printExtensions((const char* )::glGetString(GL_EXTENSIONS));
       }
     }
 
     aCtxCompat.MakeCurrent();
-    ::PostQuitMessage (0);
-    for (MSG aMsg; GetMessageW (&aMsg, aCtxCompat.myWin, 0, 0); )
+    ::PostQuitMessage(0);
+    for (MSG aMsg; GetMessageW(&aMsg, aCtxCompat.myWin, 0, 0); )
     {
-      TranslateMessage (&aMsg);
-      DispatchMessageW (&aMsg);
+      TranslateMessage(&aMsg);
+      DispatchMessageW(&aMsg);
     }
-    wglMakeCurrent (NULL, NULL);
+    wglMakeCurrent(NULL, NULL);
     return true;
   }
 
@@ -556,12 +538,12 @@ public:
   //!                             - renderer (gdi (software only),
   //!                                         mcd (mini-icd cooperating with generic driver),
   //!                                         icd (standalone driver))
-  void PrintVisualInfoWgl (bool theIsVerbose)
+  void PrintVisualInfoWgl(bool theIsVerbose)
   {
-    wglGetPixelFormatAttribivARB_t aGetAttribIProc = (wglGetPixelFormatAttribivARB_t )wglGetProcAddress ("wglGetPixelFormatAttribivARB");
-    //wglGetPixelFormatAttribfvARB_t aGetAttribFProc = (wglGetPixelFormatAttribfvARB_t )wglGetProcAddress ("wglGetPixelFormatAttribfvARB");
+    wglGetPixelFormatAttribivARB_t aGetAttribIProc = (wglGetPixelFormatAttribivARB_t )wglGetProcAddress("wglGetPixelFormatAttribivARB");
+    //wglGetPixelFormatAttribfvARB_t aGetAttribFProc = (wglGetPixelFormatAttribfvARB_t )wglGetProcAddress("wglGetPixelFormatAttribfvARB");
 
-    const int aNbFormats = DescribePixelFormat (myDevCtx, 0, 0, NULL);
+    const int aNbFormats = DescribePixelFormat(myDevCtx, 0, 0, NULL);
     std::cout <<"\n[WGL] " << aNbFormats << " WGL Visuals\n";
     if (!theIsVerbose)
     {
@@ -572,16 +554,14 @@ public:
     for (int aFormatIter = 1; aFormatIter <= aNbFormats; ++aFormatIter)
     {
       PIXELFORMATDESCRIPTOR aFormat;
-      memset (&aFormat, 0, sizeof(aFormat));
-      DescribePixelFormat (myDevCtx, aFormatIter, sizeof(PIXELFORMATDESCRIPTOR), &aFormat);
+      memset(&aFormat, 0, sizeof(aFormat));
+      DescribePixelFormat(myDevCtx, aFormatIter, sizeof(PIXELFORMATDESCRIPTOR), &aFormat);
       if ((aFormat.dwFlags & PFD_SUPPORT_OPENGL) == 0)
-      {
         continue;
-      }
-      const char* renderer;
-      if ((aFormat.dwFlags & PFD_GENERIC_FORMAT) == 0)            renderer = "icd";
-      else if ((aFormat.dwFlags & PFD_GENERIC_ACCELERATED) != 0)  renderer = "mcd";
-      else                                                        renderer = "gdi";
+
+      const char* renderer = "gdi";
+      if      ((aFormat.dwFlags & PFD_GENERIC_FORMAT) == 0)      renderer = "icd";
+      else if ((aFormat.dwFlags & PFD_GENERIC_ACCELERATED) != 0) renderer = "mcd";
 
       if (theIsVerbose)
       {
@@ -591,7 +571,7 @@ public:
           // fetch colorspace information using WGL_EXT_colorspace extension
           int aColorAttribs[1] = { WGL_COLORSPACE_EXT };
           int aColorSpaceInt[1] = { 0 };
-          if (aGetAttribIProc (myDevCtx, aFormatIter, 0, 1, aColorAttribs, aColorSpaceInt))
+          if (aGetAttribIProc(myDevCtx, aFormatIter, 0, 1, aColorAttribs, aColorSpaceInt))
           {
             aColorSpace = *aColorSpaceInt == WGL_COLORSPACE_SRGB_EXT
                         ? ", sRGB"
@@ -610,7 +590,7 @@ public:
 
         std::cout << "Visual ID: " << aFormatIter << "\n"
                   << "    color: R" << int(aFormat.cRedBits) << "G" << int(aFormat.cGreenBits) << "B" << int(aFormat.cBlueBits) << "A" << int(aFormat.cAlphaBits)
-                                    << " (" << getColorBufferClass (aFormat.cColorBits, aFormat.cRedBits) << ", " << int(aFormat.cColorBits)
+                                    << " (" << getColorBufferClass(aFormat.cColorBits, aFormat.cRedBits) << ", " << int(aFormat.cColorBits)
                                     << aColorSpace << ")"
                                     << " depth: " << int(aFormat.cDepthBits) << " stencil: " << int(aFormat.cStencilBits) << "\n"
                   << "    doubleBuffer: " << ((aFormat.dwFlags & PFD_DOUBLEBUFFER) != 0)
@@ -826,21 +806,21 @@ private:
   typedef const char* (WINAPI *eglQueryString_t) (EGLDisplay dpy, EGLint name);
 
   //! Auxiliary template to retrieve function pointer within libEGL.dll.
-  template<typename FuncType_t> bool findEglDllProc (const char* theFuncName, FuncType_t& theFuncPtr)
+  template<typename FuncType_t> bool findEglDllProc(const char* theFuncName, FuncType_t& theFuncPtr)
   {
-    theFuncPtr = (FuncType_t )(void* )GetProcAddress (myEglDll, theFuncName);
+    theFuncPtr = (FuncType_t )(void* )GetProcAddress(myEglDll, theFuncName);
     return (theFuncPtr != NULL);
   }
 
 public:
 
   //! Empty constructor.
-  EglInfoWindow (bool theIsMandatory = false)
-  : myEglDll (NULL), myEglDisp (EGL_NO_DISPLAY), myEglContext (EGL_NO_CONTEXT), myEglSurf (EGL_NO_SURFACE), myWin (NULL)
+  EglInfoWindow(bool theIsMandatory = false)
+  : myEglDll(NULL), myEglDisp(EGL_NO_DISPLAY), myEglContext(EGL_NO_CONTEXT), myEglSurf(EGL_NO_SURFACE), myWin(NULL)
   {
     #define findEglDllProcShort(theFunc) findEglDllProc(#theFunc, theFunc)
 
-    myEglDll = LoadLibraryW (L"libEGL.dll");
+    myEglDll = LoadLibraryW(L"libEGL.dll");
     if (myEglDll == NULL)
     {
       if (theIsMandatory)
@@ -850,21 +830,21 @@ public:
       return;
     }
 
-    if (!findEglDllProcShort (eglGetError)
-     || !findEglDllProcShort (eglGetProcAddress)
-     || !findEglDllProcShort (eglGetDisplay)
-     || !findEglDllProcShort (eglInitialize)
-     || !findEglDllProcShort (eglTerminate)
-     || !findEglDllProcShort (eglMakeCurrent)
-     || !findEglDllProcShort (eglGetConfigs)
-     || !findEglDllProcShort (eglGetConfigAttrib)
-     || !findEglDllProcShort (eglChooseConfig)
-     || !findEglDllProcShort (eglBindAPI)
-     || !findEglDllProcShort (eglCreateContext)
-     || !findEglDllProcShort (eglDestroyContext)
-     || !findEglDllProcShort (eglCreateWindowSurface)
-     || !findEglDllProcShort (eglDestroySurface)
-     || !findEglDllProcShort (eglQueryString))
+    if (!findEglDllProcShort(eglGetError)
+     || !findEglDllProcShort(eglGetProcAddress)
+     || !findEglDllProcShort(eglGetDisplay)
+     || !findEglDllProcShort(eglInitialize)
+     || !findEglDllProcShort(eglTerminate)
+     || !findEglDllProcShort(eglMakeCurrent)
+     || !findEglDllProcShort(eglGetConfigs)
+     || !findEglDllProcShort(eglGetConfigAttrib)
+     || !findEglDllProcShort(eglChooseConfig)
+     || !findEglDllProcShort(eglBindAPI)
+     || !findEglDllProcShort(eglCreateContext)
+     || !findEglDllProcShort(eglDestroyContext)
+     || !findEglDllProcShort(eglCreateWindowSurface)
+     || !findEglDllProcShort(eglDestroySurface)
+     || !findEglDllProcShort(eglQueryString))
     {
       std::cerr << "Error: broken libEGL.dll\n";
       myEglDll = NULL;
@@ -879,28 +859,28 @@ public:
   {
     if (myEglSurf != EGL_NO_SURFACE)
     {
-      eglDestroySurface (myEglDisp, myEglSurf);
+      eglDestroySurface(myEglDisp, myEglSurf);
       myEglSurf = EGL_NO_SURFACE;
     }
     if (myWin != NULL)
     {
-      ::DestroyWindow (myWin);
+      ::DestroyWindow(myWin);
       myWin = NULL;
     }
 
     if (myEglContext != EGL_NO_CONTEXT)
     {
-      if (eglMakeCurrent (myEglDisp, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT) != EGL_TRUE)
+      if (eglMakeCurrent(myEglDisp, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT) != EGL_TRUE)
       {
         std::cerr << "Error: FAILED to release OpenGL context!\n";
       }
-      eglDestroyContext (myEglDisp, myEglContext);
+      eglDestroyContext(myEglDisp, myEglContext);
       myEglContext = EGL_NO_CONTEXT;
     }
 
     if (myEglDisp != EGL_NO_DISPLAY)
     {
-      if (eglTerminate (myEglDisp) != EGL_TRUE)
+      if (eglTerminate(myEglDisp) != EGL_TRUE)
       {
         std::cerr << "Error: EGL, eglTerminate FAILED!\n";
       }
@@ -909,14 +889,12 @@ public:
   }
 
   //! Function to print EGL info.
-  bool PrintEglInfo (bool theIsGles)
+  bool PrintEglInfo(bool theIsGles)
   {
     if (myEglDll == NULL)
-    {
       return false;
-    }
 
-    myEglDisp = eglGetDisplay (EGL_DEFAULT_DISPLAY);
+    myEglDisp = eglGetDisplay(EGL_DEFAULT_DISPLAY);
     if (myEglDisp == EGL_NO_DISPLAY)
     {
       std::cerr << "Error: no EGL display!\n";
@@ -924,7 +902,7 @@ public:
     }
 
     EGLint aVerMajor = 0; EGLint aVerMinor = 0;
-    if (eglInitialize (myEglDisp, &aVerMajor, &aVerMinor) != EGL_TRUE)
+    if (eglInitialize(myEglDisp, &aVerMajor, &aVerMinor) != EGL_TRUE)
     {
       std::cerr << "Error: EGL display is unavailable!\n";
       return false;
@@ -933,11 +911,11 @@ public:
     static bool isFirstTime = true;
     if (isFirstTime)
     {
-      std::cout << "[EGL] EGLVersion: "    << eglQueryString (myEglDisp, EGL_VERSION) << "\n";
-      std::cout << "[EGL] EGLVendor: "     << eglQueryString (myEglDisp, EGL_VENDOR)  << "\n";
-      std::cout << "[EGL] EGLClientAPIs: " << eglQueryString (myEglDisp, EGL_CLIENT_APIS) << "\n";
+      std::cout << "[EGL] EGLVersion: "    << eglQueryString(myEglDisp, EGL_VERSION) << "\n";
+      std::cout << "[EGL] EGLVendor: "     << eglQueryString(myEglDisp, EGL_VENDOR)  << "\n";
+      std::cout << "[EGL] EGLClientAPIs: " << eglQueryString(myEglDisp, EGL_CLIENT_APIS) << "\n";
       std::cout << "[EGL] EGL extensions:\n";
-      printExtensions (eglQueryString (myEglDisp, EGL_EXTENSIONS));
+      printExtensions(eglQueryString(myEglDisp, EGL_EXTENSIONS));
       isFirstTime = false;
     }
 
@@ -959,12 +937,12 @@ public:
       aConfigAttribs[6 * 2 + 1] = theIsGles ? (aGlesVer == 3 ? EGL_OPENGL_ES3_BIT : EGL_OPENGL_ES2_BIT) : EGL_OPENGL_BIT;
       aConfigAttribs[4 * 2 + 1] = 24;
       EGLint aNbConfigs = 0;
-      if (eglChooseConfig (myEglDisp, aConfigAttribs, &anEglCfg, 1, &aNbConfigs) != EGL_TRUE
+      if (eglChooseConfig(myEglDisp, aConfigAttribs, &anEglCfg, 1, &aNbConfigs) != EGL_TRUE
        || anEglCfg == NULL)
       {
         eglGetError();
         aConfigAttribs[4 * 2 + 1] = 16; // try config with smaller depth buffer
-        if (eglChooseConfig (myEglDisp, aConfigAttribs, &anEglCfg, 1, &aNbConfigs) != EGL_TRUE
+        if (eglChooseConfig(myEglDisp, aConfigAttribs, &anEglCfg, 1, &aNbConfigs) != EGL_TRUE
          || anEglCfg == NULL)
         {
           eglGetError();
@@ -980,7 +958,7 @@ public:
     }
 
     const bool hasGLES3 = (aConfigAttribs[6 * 2 + 1] == EGL_OPENGL_ES3_BIT);
-    if (eglBindAPI (theIsGles ? EGL_OPENGL_ES_API : EGL_OPENGL_API) != EGL_TRUE)
+    if (eglBindAPI(theIsGles ? EGL_OPENGL_ES_API : EGL_OPENGL_API) != EGL_TRUE)
     {
       std::cerr << "Error: EGL does not provide " << (theIsGles ? "OpenGL ES" : "OpenGL") << " client!\n";
       return false;
@@ -989,11 +967,10 @@ public:
     EGLint  anEglCtxAttribsArr2[] = { EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE, EGL_NONE };
     EGLint  anEglCtxAttribsArr3[] = { EGL_CONTEXT_CLIENT_VERSION, 3, EGL_NONE, EGL_NONE };
     EGLint* anEglCtxAttribs = theIsGles ? (hasGLES3 ? anEglCtxAttribsArr3 : anEglCtxAttribsArr2) : NULL;
-    myEglContext = eglCreateContext (myEglDisp, anEglCfg, EGL_NO_CONTEXT, anEglCtxAttribs);
-    if (myEglContext == EGL_NO_CONTEXT
-     && hasGLES3)
+    myEglContext = eglCreateContext(myEglDisp, anEglCfg, EGL_NO_CONTEXT, anEglCtxAttribs);
+    if (myEglContext == EGL_NO_CONTEXT && hasGLES3)
     {
-      myEglContext = eglCreateContext (myEglDisp, anEglCfg, EGL_NO_CONTEXT, anEglCtxAttribsArr2);
+      myEglContext = eglCreateContext(myEglDisp, anEglCfg, EGL_NO_CONTEXT, anEglCtxAttribsArr2);
     }
     if (myEglContext == EGL_NO_CONTEXT)
     {
@@ -1001,7 +978,7 @@ public:
       return false;
     }
 
-    myWin = GlWindow::Create (theIsGles ? L"wglinfo_egl_gles" : L"wglinfo_egl_gl");
+    myWin = GlWindow::Create(theIsGles ? L"wglinfo_egl_gles" : L"wglinfo_egl_gl");
     if (myWin == NULL)
     {
       return false;
@@ -1014,39 +991,37 @@ public:
       return false;
     }
 
-    if (eglMakeCurrent (myEglDisp, myEglSurf, myEglSurf, myEglContext) != EGL_TRUE)
+    if (eglMakeCurrent(myEglDisp, myEglSurf, myEglSurf, myEglContext) != EGL_TRUE)
     {
       std::cerr << "Error: eglMakeCurrent() has failed!\n";
       return false;
     }
 
     typedef const GLubyte* (WINAPI *glGetString_t)(GLenum name);
-    glGetString_t aGlesGetString = (glGetString_t )eglGetProcAddress ("glGetString");
+    glGetString_t aGlesGetString = (glGetString_t )eglGetProcAddress("glGetString");
     if (aGlesGetString != NULL)
     {
       if (theIsGles)
       {
-        std::cout << "[EGL] OpenGL ES vendor string: "   << aGlesGetString (GL_VENDOR)   << "\n";
-        std::cout << "[EGL] OpenGL ES renderer string: " << aGlesGetString (GL_RENDERER) << "\n";
-        std::cout << "[EGL] OpenGL ES version string: "  << aGlesGetString (GL_VERSION)  << "\n";
-        if (const char* aGlslVer = (const char* )aGlesGetString (GL_SHADING_LANGUAGE_VERSION))
-        {
+        std::cout << "[EGL] OpenGL ES vendor string: "   << aGlesGetString(GL_VENDOR)   << "\n";
+        std::cout << "[EGL] OpenGL ES renderer string: " << aGlesGetString(GL_RENDERER) << "\n";
+        std::cout << "[EGL] OpenGL ES version string: "  << aGlesGetString(GL_VERSION)  << "\n";
+        if (const char* aGlslVer = (const char* )aGlesGetString(GL_SHADING_LANGUAGE_VERSION))
           std::cout << "[EGL] OpenGL ES shading language version string: " << aGlslVer << "\n";
-        }
+
         std::cout << "[EGL] OpenGL ES extensions:\n";
-        printExtensions ((const char* )aGlesGetString (GL_EXTENSIONS));
+        printExtensions ((const char* )aGlesGetString(GL_EXTENSIONS));
       }
       else
       {
-        std::cout << "[EGL] OpenGL vendor string: "   << aGlesGetString (GL_VENDOR)   << "\n";
-        std::cout << "[EGL] OpenGL renderer string: " << aGlesGetString (GL_RENDERER) << "\n";
-        std::cout << "[EGL] OpenGL version string: "  << aGlesGetString (GL_VERSION)  << "\n";
-        if (const char* aGlslVer = (const char* )aGlesGetString (GL_SHADING_LANGUAGE_VERSION))
-        {
+        std::cout << "[EGL] OpenGL vendor string: "   << aGlesGetString(GL_VENDOR)   << "\n";
+        std::cout << "[EGL] OpenGL renderer string: " << aGlesGetString(GL_RENDERER) << "\n";
+        std::cout << "[EGL] OpenGL version string: "  << aGlesGetString(GL_VERSION)  << "\n";
+        if (const char* aGlslVer = (const char* )aGlesGetString(GL_SHADING_LANGUAGE_VERSION))
           std::cout << "[EGL] OpenGL shading language version string: " << aGlslVer << "\n";
-        }
+
         std::cout << "[EGL] OpenGL extensions:\n";
-        printExtensions ((const char* )aGlesGetString (GL_EXTENSIONS));
+        printExtensions ((const char* )aGlesGetString(GL_EXTENSIONS));
       }
     }
     return true;
@@ -1055,9 +1030,7 @@ public:
   void PrintEglConfigs (bool theIsVerbose)
   {
     if (myEglDll == NULL)
-    {
       return;
-    }
 
     struct EGLConfigAttribs
     {
@@ -1076,10 +1049,10 @@ public:
     };
 
     EGLint aNbConfigs = 0;
-    eglGetConfigs (myEglDisp, NULL, 0, &aNbConfigs);
+    eglGetConfigs(myEglDisp, NULL, 0, &aNbConfigs);
     EGLConfig* aConfigs = new EGLConfig[aNbConfigs];
-    memset (aConfigs, 0, sizeof(EGLConfig) * aNbConfigs);
-    if (eglGetConfigs (myEglDisp, aConfigs, aNbConfigs, &aNbConfigs) != EGL_TRUE)
+    memset(aConfigs, 0, sizeof(EGLConfig) * aNbConfigs);
+    if (eglGetConfigs(myEglDisp, aConfigs, aNbConfigs, &aNbConfigs) != EGL_TRUE)
     {
       delete[] aConfigs;
       return;
@@ -1096,25 +1069,25 @@ public:
     {
       const EGLConfig aCfg = aConfigs[aCfgIter];
       EGLConfigAttribs anAttribs;
-      memset (&anAttribs, 0, sizeof(EGLConfigAttribs));
-      eglGetConfigAttrib (myEglDisp, aCfg, EGL_CONFIG_ID,         &anAttribs.ConfigId);
-      eglGetConfigAttrib (myEglDisp, aCfg, EGL_CONFIG_CAVEAT,     &anAttribs.ConfigCaveat);
-      eglGetConfigAttrib (myEglDisp, aCfg, EGL_RENDERABLE_TYPE,   &anAttribs.RenderbableType);
-      eglGetConfigAttrib (myEglDisp, aCfg, EGL_COLOR_BUFFER_TYPE, &anAttribs.BufferType);
-      eglGetConfigAttrib (myEglDisp, aCfg, EGL_SURFACE_TYPE,      &anAttribs.SurfaceType);
-      eglGetConfigAttrib (myEglDisp, aCfg, EGL_BUFFER_SIZE,       &anAttribs.ColorSize);
-      eglGetConfigAttrib (myEglDisp, aCfg, EGL_RED_SIZE,          &anAttribs.RedSize);
-      eglGetConfigAttrib (myEglDisp, aCfg, EGL_GREEN_SIZE,        &anAttribs.GreenSize);
-      eglGetConfigAttrib (myEglDisp, aCfg, EGL_BLUE_SIZE,         &anAttribs.BlueSize);
-      eglGetConfigAttrib (myEglDisp, aCfg, EGL_ALPHA_SIZE,        &anAttribs.AlphaSize);
-      eglGetConfigAttrib (myEglDisp, aCfg, EGL_DEPTH_SIZE,        &anAttribs.DepthSize);
-      eglGetConfigAttrib (myEglDisp, aCfg, EGL_STENCIL_SIZE,      &anAttribs.StencilSize);
+      memset(&anAttribs, 0, sizeof(EGLConfigAttribs));
+      eglGetConfigAttrib(myEglDisp, aCfg, EGL_CONFIG_ID,         &anAttribs.ConfigId);
+      eglGetConfigAttrib(myEglDisp, aCfg, EGL_CONFIG_CAVEAT,     &anAttribs.ConfigCaveat);
+      eglGetConfigAttrib(myEglDisp, aCfg, EGL_RENDERABLE_TYPE,   &anAttribs.RenderbableType);
+      eglGetConfigAttrib(myEglDisp, aCfg, EGL_COLOR_BUFFER_TYPE, &anAttribs.BufferType);
+      eglGetConfigAttrib(myEglDisp, aCfg, EGL_SURFACE_TYPE,      &anAttribs.SurfaceType);
+      eglGetConfigAttrib(myEglDisp, aCfg, EGL_BUFFER_SIZE,       &anAttribs.ColorSize);
+      eglGetConfigAttrib(myEglDisp, aCfg, EGL_RED_SIZE,          &anAttribs.RedSize);
+      eglGetConfigAttrib(myEglDisp, aCfg, EGL_GREEN_SIZE,        &anAttribs.GreenSize);
+      eglGetConfigAttrib(myEglDisp, aCfg, EGL_BLUE_SIZE,         &anAttribs.BlueSize);
+      eglGetConfigAttrib(myEglDisp, aCfg, EGL_ALPHA_SIZE,        &anAttribs.AlphaSize);
+      eglGetConfigAttrib(myEglDisp, aCfg, EGL_DEPTH_SIZE,        &anAttribs.DepthSize);
+      eglGetConfigAttrib(myEglDisp, aCfg, EGL_STENCIL_SIZE,      &anAttribs.StencilSize);
 
       if (theIsVerbose)
       {
         std::cout << "Config: " << aCfgIter << "\n"
                   << "    color: R" << int(anAttribs.RedSize) << "G" << int(anAttribs.GreenSize) << "B" << int(anAttribs.BlueSize) << "A" << int(anAttribs.AlphaSize)
-                                    << " (" << getColorBufferClass (anAttribs.ColorSize, anAttribs.RedSize) << ", " << int(anAttribs.ColorSize) << ")"
+                                    << " (" << getColorBufferClass(anAttribs.ColorSize, anAttribs.RedSize) << ", " << int(anAttribs.ColorSize) << ")"
                                     << " depth: " << int(anAttribs.DepthSize) << " stencil: " << int(anAttribs.StencilSize) << "\n"
                   << "    caveat: " << ((anAttribs.ConfigCaveat & EGL_SLOW_CONFIG) != 0 ? "slow " : " ")
                                     << ((anAttribs.ConfigCaveat & EGL_NON_CONFORMANT_CONFIG) != 0 ? "non-conformant" : " ") << "\n"
@@ -1138,17 +1111,17 @@ public:
       std::cout << " " << (anAttribs.BufferType == EGL_RGB_BUFFER ? "r" : "l") << " "
                 << '.' << " "
                 << " " << '.' << " ";
-      printInt2d (anAttribs.RedSize   && anAttribs.BufferType == EGL_RGB_BUFFER ? (int)anAttribs.RedSize   : -1);
-      printInt2d (anAttribs.GreenSize && anAttribs.BufferType == EGL_RGB_BUFFER ? (int)anAttribs.GreenSize : -1);
-      printInt2d (anAttribs.BlueSize  && anAttribs.BufferType == EGL_RGB_BUFFER ? (int)anAttribs.BlueSize  : -1);
-      printInt2d (anAttribs.AlphaSize && anAttribs.BufferType == EGL_RGB_BUFFER ? (int)anAttribs.AlphaSize : -1);
-      printInt2d (-1);
-      printInt2d (anAttribs.DepthSize   ? (int)anAttribs.DepthSize   : -1);
-      printInt2d (anAttribs.StencilSize ? (int)anAttribs.StencilSize : -1);
-      printInt2d (-1);
-      printInt2d (-1);
-      printInt2d (-1);
-      printInt2d (-1);
+      printInt2d(anAttribs.RedSize   && anAttribs.BufferType == EGL_RGB_BUFFER ? (int)anAttribs.RedSize   : -1);
+      printInt2d(anAttribs.GreenSize && anAttribs.BufferType == EGL_RGB_BUFFER ? (int)anAttribs.GreenSize : -1);
+      printInt2d(anAttribs.BlueSize  && anAttribs.BufferType == EGL_RGB_BUFFER ? (int)anAttribs.BlueSize  : -1);
+      printInt2d(anAttribs.AlphaSize && anAttribs.BufferType == EGL_RGB_BUFFER ? (int)anAttribs.AlphaSize : -1);
+      printInt2d(-1);
+      printInt2d(anAttribs.DepthSize   ? (int)anAttribs.DepthSize   : -1);
+      printInt2d(anAttribs.StencilSize ? (int)anAttribs.StencilSize : -1);
+      printInt2d(-1);
+      printInt2d(-1);
+      printInt2d(-1);
+      printInt2d(-1);
 
       std::cout <<" . .\n";
     }
@@ -1190,22 +1163,22 @@ private:
 
 };
 
-static int actual_main (int theNbArgs, const char** theArgVec)
+static int actual_main(int theNbArgs, const char** theArgVec)
 {
   bool isVerbose = false, toPrintVisuals = true, toShowEgl = true;
   for (int anArgIter = 1; anArgIter < theNbArgs; ++anArgIter)
   {
-    if (memcmp (theArgVec[anArgIter], "-v", 2) == 0)
+    if (memcmp(theArgVec[anArgIter], "-v", 2) == 0)
     {
       isVerbose = true;
     }
-    else if (memcmp (theArgVec[anArgIter], "-B", 2) == 0)
+    else if (memcmp(theArgVec[anArgIter], "-B", 2) == 0)
     {
       toPrintVisuals = false;
     }
-    else if (memcmp (theArgVec[anArgIter], "-h", 2) == 0
-          || memcmp (theArgVec[anArgIter], "--help", 6) == 0
-          || memcmp (theArgVec[anArgIter], "/?", 2) == 0)
+    else if (memcmp(theArgVec[anArgIter], "-h", 2) == 0
+          || memcmp(theArgVec[anArgIter], "--help", 6) == 0
+          || memcmp(theArgVec[anArgIter], "/?", 2) == 0)
     {
       std::cout << "Usage: " << theArgVec[0] << "\n"
                 << "  -B: brief output, print only the basics.\n"
@@ -1218,7 +1191,7 @@ static int actual_main (int theNbArgs, const char** theArgVec)
     {
       std::cerr << "Syntax error! Unknown argument '" << theArgVec[anArgIter] << "'\n\n";
       const char* anArgs[2] = { theArgVec[0], "-h" };
-      actual_main (2, anArgs);
+      actual_main(2, anArgs);
       return 1;
     }
   }
@@ -1228,7 +1201,7 @@ static int actual_main (int theNbArgs, const char** theArgVec)
   // enumerate all the formats
   if (toPrintVisuals)
   {
-    WglInfoWindow aDummy (L"wglinfo_dummy");
+    WglInfoWindow aDummy(L"wglinfo_dummy");
     if (aDummy.CreateWindowHandle())
     {
       if (!aDummy.SetWindowPixelFormat()
@@ -1238,7 +1211,7 @@ static int actual_main (int theNbArgs, const char** theArgVec)
         // wglGetPixelFormatAttribivARB is unavailable without context
       }
 
-      aDummy.PrintVisualInfoWgl (isVerbose);
+      aDummy.PrintVisualInfoWgl(isVerbose);
     }
   }
 
@@ -1246,12 +1219,12 @@ static int actual_main (int theNbArgs, const char** theArgVec)
   {
     {
       EglInfoWindow aEglCtx1;
-      aEglCtx1.PrintEglInfo (true);
+      aEglCtx1.PrintEglInfo(true);
     }
     {
       EglInfoWindow aEglCtx2;
-      aEglCtx2.PrintEglInfo (false);
-      aEglCtx2.PrintEglConfigs (isVerbose);
+      aEglCtx2.PrintEglInfo(false);
+      aEglCtx2.PrintEglConfigs(isVerbose);
     }
   }
 
