@@ -32,6 +32,11 @@ jobs:
       run: |
         cmake --build "./build" --config Release -- /m
 
+    - name: Run wglinfo
+      run: |
+        build/Release/wglinfo.exe
+        build/Release/wglinfo.exe > wglinfo.log
+
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
