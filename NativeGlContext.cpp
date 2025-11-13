@@ -49,6 +49,10 @@
 #define WGL_CONTEXT_CORE_PROFILE_BIT_ARB          0x00000001
 #define WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB 0x00000002
 
+// WGL_EXT_create_context_es_profile
+#define WGL_CONTEXT_ES_PROFILE_BIT_EXT  0x00000004
+#define WGL_CONTEXT_ES2_PROFILE_BIT_EXT 0x00000004
+
 #define GL_NUM_EXTENSIONS 0x821D
 
 typedef const char* (WINAPI *wglGetExtensionsStringARB_t)(HDC theDeviceContext);
@@ -171,6 +175,8 @@ bool NativeGlContext::CreateGlContext(ContextBits theBits)
   const bool isDebugCtx = (theBits & ContextBits_Debug) != 0;
   const bool isCoreCtx  = (theBits & ContextBits_CoreProfile) != 0;
   const bool isSoftCtx  = (theBits & ContextBits_SoftProfile) != 0;
+  const bool isGles     = (theBits & ContextBits_GLES) != 0;
+  myApi = isGles ? "OpenGL ES" : "OpenGL";
   if (isCoreCtx)
     myProfile = "core profile";
 
@@ -205,7 +211,7 @@ bool NativeGlContext::CreateGlContext(ContextBits theBits)
     WGL_COLOR_BITS_ARB,     24,
     WGL_DEPTH_BITS_ARB,     24,
     WGL_STENCIL_BITS_ARB,   8,
-    WGL_ACCELERATION_ARB,   isCoreCtx ? WGL_FULL_ACCELERATION_ARB : WGL_NO_ACCELERATION_ARB,
+    WGL_ACCELERATION_ARB,   isSoftCtx ? WGL_NO_ACCELERATION_ARB : WGL_FULL_ACCELERATION_ARB,
     0, 0,
   };
   unsigned int aFrmtsNb = 0;
@@ -217,13 +223,43 @@ bool NativeGlContext::CreateGlContext(ContextBits theBits)
     return false;
   }
 
-  if (isCoreCtx || isDebugCtx)
+  int aProfileBit = WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB;
+  if (isCoreCtx)
+    aProfileBit = WGL_CONTEXT_CORE_PROFILE_BIT_ARB;
+  if (isGles)
+    aProfileBit = WGL_CONTEXT_ES_PROFILE_BIT_EXT;
+
+  if (isGles)
+  {
+    int aGlesCtxAttribs[] =
+    {
+      WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
+      WGL_CONTEXT_MINOR_VERSION_ARB, 2,
+      WGL_CONTEXT_PROFILE_MASK_ARB,  aProfileBit,
+      WGL_CONTEXT_FLAGS_ARB,         isDebugCtx ? WGL_CONTEXT_DEBUG_BIT_ARB : 0,
+      0, 0
+    };
+
+    for (int aLowVer3 = 3; aLowVer3 >= 0 && myGlCtx == NULL; --aLowVer3)
+    {
+      aGlesCtxAttribs[1] = 3;
+      aGlesCtxAttribs[3] = aLowVer3;
+      myGlCtx = aCreateCtxProc(myDevCtx, NULL, aGlesCtxAttribs);
+    }
+    if (myGlCtx == NULL)
+    {
+      aGlesCtxAttribs[1] = 2;
+      aGlesCtxAttribs[3] = 0;
+      myGlCtx = aCreateCtxProc(myDevCtx, NULL, aGlesCtxAttribs);
+    }
+  }
+  else if (isCoreCtx || isDebugCtx)
   {
     int aCoreCtxAttribs[] =
     {
       WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
       WGL_CONTEXT_MINOR_VERSION_ARB, 2,
-      WGL_CONTEXT_PROFILE_MASK_ARB,  WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
+      WGL_CONTEXT_PROFILE_MASK_ARB,  aProfileBit,
       WGL_CONTEXT_FLAGS_ARB,         isDebugCtx ? WGL_CONTEXT_DEBUG_BIT_ARB : 0,
       0, 0
     };

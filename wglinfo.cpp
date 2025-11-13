@@ -73,6 +73,16 @@ static int actual_main(int theNbArgs, const char** theArgVec)
 
   if (toShowWgl)
   {
+    NativeGlContext aCtxCore("wglinfo_gles_profile");
+    if (aCtxCore.CreateGlContext(NativeGlContext::ContextBits_GLES))
+    {
+      aCtxCore.PrintRendererInfo();
+      aCtxCore.PrintExtensions();
+    }
+  }
+
+  if (toShowWgl)
+  {
     NativeGlContext aCtxSoft("wglinfo_ms_soft");
     if (aCtxSoft.CreateGlContext(NativeGlContext::ContextBits_SoftProfile))
     {
