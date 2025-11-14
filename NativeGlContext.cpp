@@ -123,6 +123,17 @@ void NativeGlContext::Release()
     ::wglDeleteContext((HGLRC)myRendCtx);
     myRendCtx = NULL;
   }
+#else
+  Display* aDisp = (Display*)myWin.GetDisplay();
+  if (myRendCtx != NULL && aDisp != NULL)
+  {
+    glXMakeCurrent(aDisp, None, NULL);
+
+    // FSXXX sync necessary if non-direct rendering
+    glXWaitGL();
+    glXDestroyContext(aDisp, (GLXContext)myRendCtx);
+    myRendCtx = NULL;
+  }
 #endif
   myWin.Destroy();
 }
@@ -304,7 +315,7 @@ bool NativeGlContext::CreateGlContext(ContextBits theBits)
   ///::ShowWindow((HWND)myWin.GetDrawable(), SW_HIDE);
   return myRendCtx != NULL;
 #else
-  if (isGles || isSoftCtx) // unsupported
+  if (isGles) // unsupported
     return false;
 
   Display*  aDisp   = (Display*)myWin.GetDisplay();
@@ -316,6 +327,17 @@ bool NativeGlContext::CreateGlContext(ContextBits theBits)
   {
     std::cerr << "Error: GLX extension is unavailable";
     return false;
+  }
+
+  SoftMesaSentry aMesaEnvSentry;
+  if (isSoftCtx)
+  {
+    NativeGlContext aCtxCompat("wglinfoTmp");
+    if (!aCtxCompat.CreateGlContext(ContextBits_NONE)
+     || !aMesaEnvSentry.Init(aCtxCompat))
+    {
+      return false;
+    }
   }
 
   XWindowAttributes aWinAttribs;
@@ -416,6 +438,12 @@ bool NativeGlContext::CreateGlContext(ContextBits theBits)
   }
 
   if (!MakeCurrent())
+  {
+    Release();
+    return false;
+  }
+
+  if (isSoftCtx && !aMesaEnvSentry.IsSoftContext(*this))
   {
     Release();
     return false;

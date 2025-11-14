@@ -149,6 +149,24 @@ protected:
     : Name(theName), Enum(theEnum), NbVals(theNbVals) {}
   };
 
+  //! Auxiliary tool to force software OpenGL context creation
+  //! when using Mesa via LIBGL_ALWAYS_SOFTWARE=1 environment.
+  class SoftMesaSentry
+  {
+  public:
+    ~SoftMesaSentry() { Reset(); }
+    static bool IsSoftContext(BaseGlContext& theDefCtx);
+    bool Init(BaseGlContext& theDefCtx);
+    void Reset();
+  private:
+    std::string myVendLibName;
+    std::string myAlwaysSoft;
+
+    bool myHadVendLibName = false;
+    bool myHadAlwaysSoft  = false;
+    bool myToRestore      = false;
+  };
+
 protected:
 
   ContextBits myCtxBits = ContextBits_NONE;

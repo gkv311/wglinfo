@@ -288,8 +288,21 @@ bool EglGlContext::CreateGlContext(ContextBits theBits)
   const bool isCoreCtx  = (theBits & ContextBits_CoreProfile) != 0;
   const bool isSoftCtx  = (theBits & ContextBits_SoftProfile) != 0;
   const bool isGles     = (theBits & ContextBits_GLES) != 0;
+
+  SoftMesaSentry aMesaEnvSentry;
   if (isSoftCtx)
+  {
+  #ifdef _WIN32
     return false;
+  #else
+    EglGlContext aCtxCompat("wglinfoTmp");
+    if (!aCtxCompat.CreateGlContext(ContextBits_NONE)
+     || !aMesaEnvSentry.Init(aCtxCompat))
+    {
+      return false;
+    }
+  #endif
+  }
 
   if (!myWin.Create())
   {
@@ -423,6 +436,14 @@ bool EglGlContext::CreateGlContext(ContextBits theBits)
     std::cerr << "Error: eglMakeCurrent() has failed!\n";
     return false;
   }
+
+#ifndef _WIN32
+  if (isSoftCtx && !aMesaEnvSentry.IsSoftContext(*this))
+  {
+    Release();
+    return false;
+  }
+#endif
 
   return true;
 }

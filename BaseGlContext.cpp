@@ -15,6 +15,56 @@
 #define GL_SHADING_LANGUAGE_VERSION 0x8B8C
 #define GL_NUM_EXTENSIONS 0x821D
 
+bool BaseGlContext::SoftMesaSentry::IsSoftContext(BaseGlContext& theDefCtx)
+{
+  const std::string aVendor = theDefCtx.GlGetString(GL_VENDOR);
+  const std::string aRender = theDefCtx.GlGetString(GL_RENDERER);
+  return aVendor == "Mesa" && aRender.find("llvmpipe") != std::string::npos;
+}
+
+bool BaseGlContext::SoftMesaSentry::Init(BaseGlContext& theDefCtx)
+{
+  if (IsSoftContext(theDefCtx))
+    return false;
+
+  myToRestore = true;
+
+#ifndef _WIN32
+  const char* aVendLibName = getenv("__GLX_VENDOR_LIBRARY_NAME");
+  myHadVendLibName = aVendLibName != NULL;
+  myVendLibName = aVendLibName != NULL ? aVendLibName : "";
+
+  const char* aValSoft = getenv("LIBGL_ALWAYS_SOFTWARE");
+  myHadAlwaysSoft = aValSoft != NULL;
+  myAlwaysSoft = aValSoft != NULL ? aValSoft : "";
+
+  setenv("__GLX_VENDOR_LIBRARY_NAME", "mesa", 1);
+  setenv("LIBGL_ALWAYS_SOFTWARE", "1", 1);
+  return true;
+#else
+  return false;
+#endif
+}
+
+void BaseGlContext::SoftMesaSentry::Reset()
+{
+  if (!myToRestore)
+    return;
+
+  myToRestore = false;
+#ifndef _WIN32
+  if (myHadVendLibName)
+    setenv("__GLX_VENDOR_LIBRARY_NAME", myVendLibName.c_str(), 1);
+  else
+    unsetenv("__GLX_VENDOR_LIBRARY_NAME");
+
+  if (myHadAlwaysSoft)
+    setenv("LIBGL_ALWAYS_SOFTWARE", myAlwaysSoft.c_str(), 1);
+  else
+    unsetenv("LIBGL_ALWAYS_SOFTWARE");
+#endif
+}
+
 void BaseGlContext::printInt2d(int theInt)
 {
   if (theInt < 0)
