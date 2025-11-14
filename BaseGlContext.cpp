@@ -130,7 +130,7 @@ void BaseGlContext::PrintExtensions()
   std::cout << Prefix() << "extensions:\n";
 
   int anExtNb = 0;
-  if (myApi == "OpenGL" && myProfile == "core profile")
+  if ((myCtxBits & ContextBits_GLES) == 0 && (myCtxBits & ContextBits_CoreProfile) != 0)
     GlGetIntegerv(GL_NUM_EXTENSIONS, &anExtNb);
 
   if (anExtNb == 0)

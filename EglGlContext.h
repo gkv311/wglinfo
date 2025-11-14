@@ -25,6 +25,9 @@ public:
   //! Load EGL library.
   bool LoadEglLibrary(bool theIsMandatory = false);
 
+  //! Return platform name "EGL".
+  virtual const char* PlatformName() const override { return "EGL"; }
+
   //! Release resources.
   virtual void Release() override;
 

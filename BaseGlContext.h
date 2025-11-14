@@ -24,18 +24,27 @@ public:
 
   std::string Prefix() const
   {
-    return std::string("[") + myPlatform + "] " + myApi
-        + (!myProfile.empty() ? " (" : "") + myProfile + (!myProfile.empty() ? ") " : " ");
+    return std::string("[") + PlatformName() + "] " + ApiName() + ProfileSuffix() + " ";
+  }
+
+  //! Return rendering API (OpenGL, OpenGL ES, etc.).
+  const char* ApiName() const { return (myCtxBits & ContextBits_GLES) != 0 ? "OpenGL ES" : "OpenGL"; }
+
+  //! Return rendering profile.
+  const char* ProfileSuffix() const
+  {
+    if ((myCtxBits & ContextBits_GLES) != 0)
+      return "";
+    else if ((myCtxBits & ContextBits_CoreProfile) != 0)
+      return " (core profile)";
+    else if ((myCtxBits & ContextBits_SoftProfile) != 0)
+      return " (software)";
+
+    return "";
   }
 
   //! Return platform (EGL, WGL, GLX, etc.).
-  const std::string& Platform() const { return myPlatform; }
-
-  //! Return rendering API (OpenGL, OpenGL ES, etc.).
-  const std::string& Api() const { return myApi; }
-
-  //! Return rendering profile.
-  const std::string& Profile() const { return myProfile; }
+  virtual const char* PlatformName() const = 0;
 
   //! Create a GL context.
   virtual bool CreateGlContext(ContextBits theBits) = 0;
@@ -103,9 +112,7 @@ protected:
 
 protected:
 
-  std::string myPlatform;
-  std::string myApi;
-  std::string myProfile;
+  ContextBits myCtxBits = ContextBits_NONE;
 
 };
 

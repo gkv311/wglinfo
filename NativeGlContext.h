@@ -22,6 +22,9 @@ public:
   //! Destructor.
   ~NativeGlContext() { Release(); }
 
+  //! Return platform (WGL, GLX, etc.).
+  virtual const char* PlatformName() const override;
+
   //! Release resources.
   virtual void Release() override;
 

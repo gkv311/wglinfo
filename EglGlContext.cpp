@@ -145,9 +145,7 @@ EglGlContext::EglGlContext(const std::string& theTitle)
 : myEglDll(NULL), myEglDisp(EGL_NO_DISPLAY), myEglContext(EGL_NO_CONTEXT), myEglSurf(EGL_NO_SURFACE),
   myWin(theTitle)
 {
-  myPlatform = "EGL";
-  myApi = "OpenGL";
-  myProfile = "";
+  //
 }
 
 bool EglGlContext::LoadEglLibrary(bool theIsMandatory)
@@ -270,8 +268,8 @@ bool EglGlContext::CreateGlContext(ContextBits theBits)
   if (!LoadEglLibrary())
     return false;
 
+  myCtxBits = theBits;
   const bool isGles = (theBits & ContextBits_GLES) != 0;
-  myApi = isGles ? "OpenGL ES" : "OpenGL";
   if (!myWin.Create())
   {
     return false;
@@ -371,12 +369,12 @@ void EglGlContext::PrintPlatformInfo(bool theToPrintExtensions)
   if (myEglDisp == EGL_NO_DISPLAY)
     return;
 
-  std::cout << "[" << myPlatform << "] EGLVersion:    " << eglQueryString(myEglDisp, EGL_VERSION) << "\n";
-  std::cout << "[" << myPlatform << "] EGLVendor:     " << eglQueryString(myEglDisp, EGL_VENDOR) << "\n";
-  std::cout << "[" << myPlatform << "] EGLClientAPIs: " << eglQueryString(myEglDisp, EGL_CLIENT_APIS) << "\n";
+  std::cout << "[" << PlatformName() << "] EGLVersion:    " << eglQueryString(myEglDisp, EGL_VERSION) << "\n";
+  std::cout << "[" << PlatformName() << "] EGLVendor:     " << eglQueryString(myEglDisp, EGL_VENDOR) << "\n";
+  std::cout << "[" << PlatformName() << "] EGLClientAPIs: " << eglQueryString(myEglDisp, EGL_CLIENT_APIS) << "\n";
   if (theToPrintExtensions)
   {
-    std::cout << "[" << myPlatform << "] EGL extensions:\n";
+    std::cout << "[" << PlatformName() << "] EGL extensions:\n";
     printExtensions(eglQueryString(myEglDisp, EGL_EXTENSIONS));
   }
 }

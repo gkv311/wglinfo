@@ -83,12 +83,15 @@ static void printLastSystemError()
   }
 }
 
+const char* NativeGlContext::PlatformName() const
+{
+  return "WGL";
+}
+
 NativeGlContext::NativeGlContext(const std::string& theTitle)
 : myWin(theTitle), myDevCtx(NULL), myGlCtx(NULL)
 {
-  myPlatform = "WGL";
-  myApi = "OpenGL";
-  myProfile = "";
+  //
 }
 
 void NativeGlContext::Release()
@@ -176,12 +179,7 @@ bool NativeGlContext::CreateGlContext(ContextBits theBits)
   const bool isCoreCtx  = (theBits & ContextBits_CoreProfile) != 0;
   const bool isSoftCtx  = (theBits & ContextBits_SoftProfile) != 0;
   const bool isGles     = (theBits & ContextBits_GLES) != 0;
-  myApi = isGles ? "OpenGL ES" : "OpenGL";
-  if (isCoreCtx)
-    myProfile = "core profile";
-
-  if (isSoftCtx)
-    myProfile = "software";
+  myCtxBits = theBits;
 
   // have to create a tempory context first in case of WGL
   NativeGlContext aCtxCompat("wglinfoTmp");
@@ -356,7 +354,7 @@ void NativeGlContext::GlGetIntegerv(unsigned int theGlEnum, int* theParams)
 
 void NativeGlContext::PrintPlatformInfo(bool theToPrintExtensions)
 {
-  std::cout << "[" << myPlatform << "] WGLName:       opengl32.dll\n";
+  std::cout << "[" << PlatformName() << "] WGLName:       opengl32.dll\n";
   if (!theToPrintExtensions)
     return;
 
@@ -366,7 +364,7 @@ void NativeGlContext::PrintPlatformInfo(bool theToPrintExtensions)
     aWglExts = wglGetExtensionsStringARB(wglGetCurrentDC());
 
   // output header information
-  std::cout << "[" << myPlatform << "] WGL extensions:\n";
+  std::cout << "[" << PlatformName() << "] WGL extensions:\n";
   printExtensions(aWglExts);
 }
 
@@ -400,7 +398,7 @@ void NativeGlContext::PrintVisuals(bool theIsVerbose)
   //FindProc("wglGetPixelFormatAttribfvARB", aGetAttribFProc);
 
   const int aNbFormats = DescribePixelFormat(myDevCtx, 0, 0, NULL);
-  std::cout << "\n[" << myPlatform << "] " << aNbFormats << " WGL Visuals\n";
+  std::cout << "\n[" << PlatformName() << "] " << aNbFormats << " WGL Visuals\n";
   if (!theIsVerbose)
   {
     std::cout << "    visual  x  bf lv rg d st  r  g  b a  ax dp st accum buffs  ms \n"
