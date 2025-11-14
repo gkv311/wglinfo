@@ -69,6 +69,9 @@ public:
   //! Print renderer extensions.
   virtual void PrintExtensions();
 
+  //! Print renderer limits.
+  virtual void PrintLimits();
+
   //! Print all visuals.
   virtual void PrintVisuals(bool theIsVerbose) = 0;
 
@@ -109,6 +112,41 @@ protected:
 
   //! Format extensions as a comma separated list with line size fixed to 80.
   static void printExtensions(const char* theExt);
+
+  //! Find extension in the list of extensions.
+  static bool hasExtension(const std::string& theList, const std::string& theName)
+  {
+    std::size_t aPos = theList.find(theName);
+    if (aPos == std::string::npos)
+      return false;
+
+    if (aPos + theName.length() < theList.length()
+     && theList[aPos + theName.length()] != ' ')
+    {
+      return false; // make this is the whole word
+    }
+    return true;
+  }
+
+  //! Return list of extensions.
+  std::string getGlExtensions();
+
+  //! Print integer limit.
+  void printLimitInt(unsigned int theGlEnum, const char* theName);
+
+  //! Print integer range limit.
+  void printLimitIntRange(unsigned int theGlEnum, const char* theName);
+
+  //! Limit definition.
+  struct LimitDefinition
+  {
+    const char*  Name = "";
+    unsigned int Enum = 0;
+    int          NbVals = 1;
+
+    LimitDefinition(const char* theName, unsigned int theEnum, int theNbVals)
+    : Name(theName), Enum(theEnum), NbVals(theNbVals) {}
+  };
 
 protected:
 

@@ -28,7 +28,7 @@ private:
   void suppressInfoBut(bool& theToShow)
   {
     myToPrintPlatform = myToPrintExtensions = myToPrintVisuals = false;
-    myToPrintRenderer = myToPrintGpuMem = false;
+    myToPrintRenderer = myToPrintGpuMem = myToPrintLimits = false;
     theToShow = true;
   }
 
@@ -66,6 +66,7 @@ private:
   bool myToPrintRenderer = true;
   bool myToPrintGpuMem = true;
   bool myToPrintExtensions = true;
+  bool myToPrintLimits = true;
   bool myToPrintVisuals = true;
 
   int myExitCode = 1;
@@ -156,6 +157,14 @@ bool WglInfo::parseArguments(int theNbArgs, const char** theArgVec)
     {
       suppressInfoBut(myToPrintExtensions);
     }
+    else if (anArg == "--nolimits" || anArg == "-nolimits")
+    {
+      myToPrintLimits = false;
+    }
+    else if (anArg == "--limits" || anArg == "-limits")
+    {
+      suppressInfoBut(myToPrintLimits);
+    }
     else if (anArg == "--novisuals" || anArg == "-novisuals" ||  anArg == "-b")
     {
       myToPrintVisuals = false;
@@ -191,15 +200,13 @@ bool WglInfo::parseArguments(int theNbArgs, const char** theArgVec)
         {
           --anArgIter;
           myToShowWgl = myToShowEgl = true;
-          myToPrintRenderer = myToPrintVisuals = myToPrintExtensions = myToPrintGpuMem = false;
-          myToPrintPlatform = true;
+          suppressInfoBut(myToPrintPlatform);
         }
       }
       else
       {
         myToShowWgl = myToShowEgl = true;
-        myToPrintRenderer = myToPrintVisuals = myToPrintExtensions = myToPrintGpuMem = false;
-        myToPrintPlatform = true;
+        suppressInfoBut(myToPrintPlatform);
       }
     }
     else if (anArg == "egl")
@@ -359,6 +366,9 @@ std::vector<BaseGlContext::ContextBits> WglInfo::printWglInfo()
 
     if (myToPrintExtensions)
       aCtx.PrintExtensions();
+
+    if (myToPrintLimits)
+      aCtx.PrintLimits();
 
     if (myIsFirstOnly)
       return aSucceeded;

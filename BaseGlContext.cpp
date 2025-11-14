@@ -33,9 +33,9 @@ const char* BaseGlContext::getColorBufferClass(int theNbColorBits, int theNbRedB
   return "TrueColor";
 }
 
+static const int THE_LINE_LEN = 80;
 void BaseGlContext::printExtensions(const char* theExt)
 {
-  static const int THE_LINE_LEN = 80;
   if (theExt == NULL)
   {
     std::cout << "    NULL.\n\n";
@@ -125,19 +125,13 @@ void BaseGlContext::PrintGpuMemoryInfo()
   }
 }
 
-void BaseGlContext::PrintExtensions()
+std::string BaseGlContext::getGlExtensions()
 {
-  std::cout << Prefix() << "extensions:\n";
+  if ((myCtxBits & ContextBits_GLES) != 0 || (myCtxBits & ContextBits_CoreProfile) == 0)
+    return ((const char*)GlGetString(GL_EXTENSIONS));
 
   int anExtNb = 0;
-  if ((myCtxBits & ContextBits_GLES) == 0 && (myCtxBits & ContextBits_CoreProfile) != 0)
-    GlGetIntegerv(GL_NUM_EXTENSIONS, &anExtNb);
-
-  if (anExtNb == 0)
-  {
-    printExtensions((const char*)GlGetString(GL_EXTENSIONS));
-    return;
-  }
+  GlGetIntegerv(GL_NUM_EXTENSIONS, &anExtNb);
 
   std::string aList;
   for (int anExtIter = 0; anExtIter < anExtNb; ++anExtIter)
@@ -150,5 +144,175 @@ void BaseGlContext::PrintExtensions()
     }
     //const size_t aTestExtNameLen = strlen (anExtension);
   }
-  printExtensions(aList.c_str());
+  return aList.c_str();
+}
+
+void BaseGlContext::PrintExtensions()
+{
+  std::cout << Prefix() << "extensions:\n";
+  const std::string anExtList = getGlExtensions();
+  printExtensions(anExtList.c_str());
+}
+
+#define GL_MAX_VIEWPORT_DIMS              0x0D3A
+#define GL_MAX_RENDERBUFFER_SIZE          0x84E8
+#define GL_MAX_COLOR_ATTACHMENTS          0x8CDF
+#define GL_MAX_DRAW_BUFFERS               0x8824
+
+#define GL_MAX_FRAMEBUFFER_WIDTH          0x9315
+#define GL_MAX_FRAMEBUFFER_HEIGHT         0x9316
+#define GL_MAX_FRAMEBUFFER_LAYERS         0x9317
+#define GL_MAX_FRAMEBUFFER_SAMPLES        0x9318
+
+#define GL_MAX_TEXTURE_SIZE               0x0D33
+#define GL_MAX_RECTANGLE_TEXTURE_SIZE     0x84F8
+#define GL_MAX_3D_TEXTURE_SIZE            0x8073
+#define GL_MAX_TEXTURE_MAX_ANISOTROPY     0x84FF
+#define GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS 0x8B4D // GLSL
+#define GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS 0x8B4C
+#define GL_MAX_TEXTURE_UNITS              0x84E2 // OpenGL 1.3, FFP
+#define GL_MAX_ARRAY_TEXTURE_LAYERS       0x88FF
+
+#define GL_MAX_SAMPLES                    0x8D57
+#define GL_MAX_COLOR_TEXTURE_SAMPLES      0x910E
+#define GL_MAX_DEPTH_TEXTURE_SAMPLES      0x910F
+#define GL_MAX_INTEGER_SAMPLES            0x9110
+
+#define GL_MAX_TEXTURE_BUFFER_SIZE        0x8C2B
+
+#define GL_ALIASED_LINE_WIDTH_RANGE       0x846E
+#define GL_SMOOTH_LINE_WIDTH_RANGE        0x0B22
+#define GL_SMOOTH_LINE_WIDTH_GRANULARITY  0x0B23
+
+#define GL_ALIASED_POINT_SIZE_RANGE       0x846D
+#define GL_SMOOTH_POINT_SIZE_RANGE        0x0B12
+#define GL_SMOOTH_POINT_SIZE_GRANULARITY  0x0B13
+
+#define GL_MAX_VERTEX_UNIFORM_BLOCKS      0x8A2B
+#define GL_MAX_GEOMETRY_UNIFORM_BLOCKS    0x8A2C
+#define GL_MAX_FRAGMENT_UNIFORM_BLOCKS    0x8A2D
+#define GL_MAX_COMBINED_UNIFORM_BLOCKS    0x8A2E
+#define GL_MAX_UNIFORM_BUFFER_BINDINGS    0x8A2F
+#define GL_MAX_UNIFORM_BLOCK_SIZE         0x8A30
+#define GL_MAX_COMBINED_VERTEX_UNIFORM_COMPONENTS 0x8A31
+#define GL_MAX_COMBINED_GEOMETRY_UNIFORM_COMPONENTS 0x8A32
+#define GL_MAX_COMBINED_FRAGMENT_UNIFORM_COMPONENTS 0x8A33
+#define GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT 0x8A34
+
+#define GL_MAX_VERTEX_ATTRIB_RELATIVE_OFFSET 0x82D9
+#define GL_MAX_VERTEX_ATTRIB_BINDINGS     0x82DA
+
+void BaseGlContext::printLimitInt(unsigned int theGlEnum, const char* theName)
+{
+  int aVal = 0;
+  GlGetIntegerv(theGlEnum, &aVal);
+  if (GlGetError() != GL_NO_ERROR)
+    return;
+
+  std::cout << "  " << theName << " = " << aVal << "\n";
+}
+
+void BaseGlContext::printLimitIntRange(unsigned int theGlEnum, const char* theName)
+{
+  int aVal[2] = {0, 0};
+  GlGetIntegerv(theGlEnum, aVal);
+  if (GlGetError() != GL_NO_ERROR)
+    return;
+
+  std::cout << "  " << theName << " = " << aVal[0] << ", " << aVal[1] << "\n";
+}
+
+#define LimitIntValue(theId) LimitDefinition(#theId, theId, 1)
+#define LimitIntRange(theId) LimitDefinition(#theId, theId, 2)
+
+void BaseGlContext::PrintLimits()
+{
+  std::cout << Prefix() << "limits:\n";
+
+  const std::string anExtList = getGlExtensions();
+  GlGetError(); // reset error if any
+
+  static const LimitDefinition THE_LIMITS[] =
+  {
+    // viewport
+    LimitIntRange(GL_MAX_VIEWPORT_DIMS),
+    LimitIntValue(GL_MAX_RENDERBUFFER_SIZE),
+    LimitIntValue(GL_MAX_SAMPLES),
+    LimitIntValue(GL_MAX_COLOR_ATTACHMENTS),
+    LimitIntValue(GL_MAX_DRAW_BUFFERS),
+    // FBO
+    LimitIntValue(GL_MAX_FRAMEBUFFER_WIDTH),
+    LimitIntValue(GL_MAX_FRAMEBUFFER_HEIGHT),
+    LimitIntValue(GL_MAX_FRAMEBUFFER_LAYERS),
+    LimitIntValue(GL_MAX_FRAMEBUFFER_SAMPLES),
+    // textures
+    LimitIntValue(GL_MAX_TEXTURE_SIZE),
+    LimitIntValue(GL_MAX_RECTANGLE_TEXTURE_SIZE),
+    LimitIntValue(GL_MAX_3D_TEXTURE_SIZE),
+    LimitIntValue(GL_MAX_ARRAY_TEXTURE_LAYERS),
+    LimitIntValue(GL_MAX_TEXTURE_UNITS),
+    LimitIntValue(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS),
+    LimitIntValue(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS),
+    LimitIntValue(GL_MAX_TEXTURE_MAX_ANISOTROPY),
+    // MSAA
+    LimitIntValue(GL_MAX_COLOR_TEXTURE_SAMPLES),
+    LimitIntValue(GL_MAX_DEPTH_TEXTURE_SAMPLES),
+    LimitIntValue(GL_MAX_INTEGER_SAMPLES),
+    // TBO
+    LimitIntValue(GL_MAX_TEXTURE_BUFFER_SIZE),
+    // UBO
+    LimitIntValue(GL_MAX_COMBINED_UNIFORM_BLOCKS),
+    LimitIntValue(GL_MAX_VERTEX_UNIFORM_BLOCKS),
+    LimitIntValue(GL_MAX_FRAGMENT_UNIFORM_BLOCKS),
+    //LimitIntValue(GL_MAX_GEOMETRY_UNIFORM_BLOCKS),
+    LimitIntValue(GL_MAX_UNIFORM_BUFFER_BINDINGS),
+    LimitIntValue(GL_MAX_UNIFORM_BLOCK_SIZE),
+    LimitIntValue(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT),
+    // vertex attributes
+    LimitIntValue(GL_MAX_VERTEX_ATTRIB_RELATIVE_OFFSET),
+    LimitIntValue(GL_MAX_VERTEX_ATTRIB_BINDINGS),
+    // lines
+    LimitIntRange(GL_ALIASED_LINE_WIDTH_RANGE),
+    LimitIntRange(GL_SMOOTH_LINE_WIDTH_RANGE),
+    // points
+    LimitIntRange(GL_ALIASED_POINT_SIZE_RANGE),
+    LimitIntRange(GL_SMOOTH_POINT_SIZE_RANGE)
+  };
+
+  for (const LimitDefinition& aLim : THE_LIMITS)
+  {
+    if (aLim.NbVals == 2)
+      printLimitIntRange(aLim.Enum, aLim.Name);
+    else
+      printLimitInt(aLim.Enum, aLim.Name);
+  }
+
+#define GL_NUM_SHADING_LANGUAGE_VERSIONS  0x82E9
+#define GL_SHADING_LANGUAGE_VERSION       0x8B8C
+  if ((myCtxBits & ContextBits_GLES) != 0)
+    return;
+
+  int aNbVers = 0;
+  GlGetIntegerv(GL_NUM_SHADING_LANGUAGE_VERSIONS, &aNbVers);
+  if (GlGetError() != GL_NO_ERROR || aNbVers == 0)
+    return;
+
+  std::cout << "  GL_SHADING_LANGUAGE_VERSION =";
+  size_t aLineLen = THE_LINE_LEN * 2;
+  for (int aVerIter = 0; aVerIter < aNbVers; ++aVerIter)
+  {
+    const std::string aName = GlGetStringi(GL_SHADING_LANGUAGE_VERSION, aVerIter);
+    aLineLen += aName.length();
+    if (aLineLen > THE_LINE_LEN)
+    {
+      std::cout << "\n    ";
+      aLineLen = aName.length() + 4;
+    }
+    else if (aVerIter > 0)
+    {
+      std::cout << ", ";
+    }
+    std::cout << aName;
+  }
+  std::cout << "\n";
 }
