@@ -49,7 +49,7 @@ public:
 public:
 
   //! Print platform info.
-  virtual void PrintPlatformInfo() = 0;
+  virtual void PrintPlatformInfo(bool theToPrintExtensions) = 0;
 
   //! Print renderer info.
   virtual void PrintRendererInfo();

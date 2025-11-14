@@ -24,6 +24,14 @@ public:
 
 private:
 
+  //! Suppress info
+  void suppressInfoBut(bool& theToShow)
+  {
+    myToPrintPlatform = myToPrintExtensions = myToPrintVisuals = false;
+    myToPrintRenderer = myToPrintGpuMem = false;
+    theToShow = true;
+  }
+
   //! Parse arguments.
   bool parseArguments(int theNbArgs, const char** theArgVec);
 
@@ -51,7 +59,13 @@ private:
   bool myIsCoreProfile = true;
   bool myIsSoftProfile = true;
 
+  bool myIsFirstOnly = false;
   bool myIsVerbose = false;
+
+  bool myToPrintPlatform = true;
+  bool myToPrintRenderer = true;
+  bool myToPrintGpuMem = true;
+  bool myToPrintExtensions = true;
   bool myToPrintVisuals = true;
 
   int myExitCode = 1;
@@ -73,8 +87,11 @@ int WglInfo::Perform(int theNbArgs, const char** theArgVec)
 
   const std::vector<BaseGlContext::ContextBits> aWglDone =
     myToShowWgl ? printWglInfo<NativeGlContext>() : std::vector<BaseGlContext::ContextBits>();
-  const std::vector<BaseGlContext::ContextBits> aEglDone =
-    myToShowEgl ? printWglInfo<EglGlContext>() : std::vector<BaseGlContext::ContextBits>();
+
+  std::vector<BaseGlContext::ContextBits> aEglDone;
+  if (myToShowEgl && (!myIsFirstOnly || aWglDone.empty()))
+    aEglDone = printWglInfo<EglGlContext>();
+
   if (aWglDone.empty() && aEglDone.empty())
     myExitCode = 1;
 
@@ -115,31 +132,74 @@ bool WglInfo::parseArguments(int theNbArgs, const char** theArgVec)
     {
       myIsVerbose = true;
     }
-    else if (anArg == "-b")
+    else if (anArg == "--first" || anArg == "-first")
+    {
+      myIsFirstOnly = true;
+    }
+    else if (anArg == "--noplatform" || anArg == "-noplatform")
+    {
+      myToPrintPlatform = false;
+    }
+    else if (anArg == "--norenderer" || anArg == "-norenderer")
+    {
+      myToPrintRenderer = false;
+    }
+    else if (anArg == "--renderer" || anArg == "-renderer")
+    {
+      suppressInfoBut(myToPrintRenderer);
+    }
+    else if (anArg == "--noextensions" || anArg == "-noextensions")
+    {
+      myToPrintExtensions = false;
+    }
+    else if (anArg == "--extensions" || anArg == "-extensions")
+    {
+      suppressInfoBut(myToPrintExtensions);
+    }
+    else if (anArg == "--novisuals" || anArg == "-novisuals" ||  anArg == "-b")
     {
       myToPrintVisuals = false;
     }
-    else if ((anArg == "--platform" || anArg == "-platform")
-              && anArgIter + 1 < theNbArgs)
+    else if (anArg == "--visuals" || anArg == "-visuals")
     {
-      const std::string aVal = stringToLowerCase(theArgVec[++anArgIter]);
+      suppressInfoBut(myToPrintVisuals);
+    }
+    else if (anArg == "--gpumemory" || anArg == "-gpumemory"
+          || anArg == "--gpumem" || anArg == "-gpumem")
+    {
+      suppressInfoBut(myToPrintGpuMem);
+    }
+    else if (anArg == "--platform" || anArg == "-platform")
+    {
       myToShowWgl = myToShowEgl = false;
-      if (aVal == "*")
+      if (anArgIter + 1 < theNbArgs)
       {
-        myToShowWgl = myToShowEgl = true;
-      }
-      else if (aVal == "egl")
-      {
-        myToShowEgl = true;
-      }
-      else if (aVal == "wgl")
-      {
-        myToShowWgl = true;
+        const std::string aVal = stringToLowerCase(theArgVec[++anArgIter]);
+        if (aVal == "*")
+        {
+          myToShowWgl = myToShowEgl = true;
+        }
+        else if (aVal == "egl")
+        {
+          myToShowEgl = true;
+        }
+        else if (aVal == "wgl")
+        {
+          myToShowWgl = true;
+        }
+        else
+        {
+          --anArgIter;
+          myToShowWgl = myToShowEgl = true;
+          myToPrintRenderer = myToPrintVisuals = myToPrintExtensions = myToPrintGpuMem = false;
+          myToPrintPlatform = true;
+        }
       }
       else
       {
-        std::cerr << "Syntax error! Unknown platform '" << theArgVec[anArgIter] << "'\n\n";
-        return false;
+        myToShowWgl = myToShowEgl = true;
+        myToPrintRenderer = myToPrintVisuals = myToPrintExtensions = myToPrintGpuMem = false;
+        myToPrintPlatform = true;
       }
     }
     else if (anArg == "egl")
@@ -153,7 +213,7 @@ bool WglInfo::parseArguments(int theNbArgs, const char** theArgVec)
       myToShowWgl = true;
     }
     else if ((anArg == "--api" || anArg == "-api")
-              && anArgIter + 1 < theNbArgs)
+           && anArgIter + 1 < theNbArgs)
     {
       const std::string aVal = stringToLowerCase(theArgVec[++anArgIter]);
       myToShowGl = myToShowGles = false;
@@ -218,31 +278,6 @@ bool WglInfo::parseArguments(int theNbArgs, const char** theArgVec)
         return false;
       }
     }
-    else if (anArg == "compat" || anArg == "compatible"
-          || anArg == "compatible_profile" || anArg == "compatible profile")
-    {
-      myToShowGl = true;
-      myToShowGles = false;
-      myIsCompatProfile = true;
-      myIsCoreProfile = false;
-      myIsSoftProfile = false;
-    }
-    else if (anArg == "core" || anArg == "core_profile" || anArg == "core profile")
-    {
-      myToShowGl = true;
-      myToShowGles = false;
-      myIsCompatProfile = false;
-      myIsCoreProfile = true;
-      myIsSoftProfile = false;
-    }
-    else if (anArg == "soft" || anArg == "noacc" || anArg == "no_acceleration")
-    {
-      myToShowGl = true;
-      myToShowGles = false;
-      myIsCompatProfile = false;
-      myIsCoreProfile = false;
-      myIsSoftProfile = true;
-    }
     else if (anArg == "-h" || anArg == "--help" || anArg == "/?")
     {
       printHelp(theArgVec[0]);
@@ -267,13 +302,23 @@ void WglInfo::printHelp(const char* theName)
     aName = aName.substr(0, aName.size() - 4);
   }
   std::cout << "Usage: " << aName << " [-v] [-h] [--platform {egl|wgl}]=* [--api {gl|gles}]=*\n"
-    "               [--profile {core|compat|soft}]=*\n"
-    "  -B         Brief output, print only the basics.\n"
-    "  -v         Print visuals info in verbose form.\n"
-    "  -h         This information.\n"
-    "  --platform Platform to create OpenGL/OpenGL ES context.\n"
-    "  --api      Api to create context (OpenGL or OpenGL ES).\n"
-    "  --profile  Profile to create OpenGL context.\n"
+    "               [--profile {core|compat|soft}]=* [--gpumemory] [--first]\n"
+    "               [--novisuals] [--noextensions] [--norenderer] [--noplatform]\n"
+    "  -B             Brief output, print only the basics.\n"
+    "  -v             Print visuals info in verbose form.\n"
+    "  -h             This information.\n"
+    "  --platform     Platform (EGL/WGL) to create context;\n"
+    "                 by default all available platforms will be evaluated.\n"
+    "  --api          Api (OpenGL or OpenGL ES) to create context;\n"
+    "                 by default all available APIs will be evaluated.\n"
+    "  --profile      Profile to create OpenGL context;\n"
+    "                 by default several main profiles will be evaluated.\n"
+    "  --gpumemory    Print only GPU memory info (suppresses all other info).\n"
+    "  --first        Print only first context.\n"
+    "  --noplatform   Do not print platform (EGL/WGL) info.\n"
+    "  --norenderer   Do not print renderer info.\n"
+    "  --noextensions Do not list extensions.\n"
+    "  --novisuals    Do not list visuals, same as -B.\n"
     "This wglinfo tool variation has been created by Kirill Gavrilov Tartynskih <kirill@sview.ru>\n";
 }
 
@@ -303,12 +348,20 @@ std::vector<BaseGlContext::ContextBits> WglInfo::printWglInfo()
       continue;
 
     aSucceeded.push_back(anOpt);
-    if (aSucceeded.size() == 1)
-      aCtx.PrintPlatformInfo(); // print platform once
+    if (myToPrintPlatform && aSucceeded.size() == 1)
+      aCtx.PrintPlatformInfo(myToPrintExtensions); // print platform once
 
-    aCtx.PrintRendererInfo();
-    aCtx.PrintGpuMemoryInfo();
-    aCtx.PrintExtensions();
+    if (myToPrintRenderer)
+      aCtx.PrintRendererInfo();
+
+    if (myToPrintGpuMem)
+      aCtx.PrintGpuMemoryInfo();
+
+    if (myToPrintExtensions)
+      aCtx.PrintExtensions();
+
+    if (myIsFirstOnly)
+      return aSucceeded;
   }
 
   return aSucceeded;

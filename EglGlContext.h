@@ -37,7 +37,7 @@ public:
 public:
 
   //! Print WGL platform info.
-  virtual void PrintPlatformInfo() override;
+  virtual void PrintPlatformInfo(bool theToPrintExtensions) override;
 
   //! Print EGL configs.
   virtual void PrintVisuals(bool theIsVerbose) override;

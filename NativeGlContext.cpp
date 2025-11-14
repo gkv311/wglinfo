@@ -354,18 +354,20 @@ void NativeGlContext::GlGetIntegerv(unsigned int theGlEnum, int* theParams)
   ::glGetIntegerv(theGlEnum, theParams);
 }
 
-void NativeGlContext::PrintPlatformInfo()
+void NativeGlContext::PrintPlatformInfo(bool theToPrintExtensions)
 {
-  const char* aWglExts = NULL;
-  {
-    wglGetExtensionsStringARB_t wglGetExtensionsStringARB = NULL;
-    if (FindProc("wglGetExtensionsStringARB", wglGetExtensionsStringARB))
-      aWglExts = wglGetExtensionsStringARB(wglGetCurrentDC());
+  std::cout << "[" << myPlatform << "] WGLName:       opengl32.dll\n";
+  if (!theToPrintExtensions)
+    return;
 
-    // output header information
-    std::cout << "[" << myPlatform << "] WGL extensions:\n";
-    printExtensions(aWglExts);
-  }
+  const char* aWglExts = NULL;
+  wglGetExtensionsStringARB_t wglGetExtensionsStringARB = NULL;
+  if (FindProc("wglGetExtensionsStringARB", wglGetExtensionsStringARB))
+    aWglExts = wglGetExtensionsStringARB(wglGetCurrentDC());
+
+  // output header information
+  std::cout << "[" << myPlatform << "] WGL extensions:\n";
+  printExtensions(aWglExts);
 }
 
 void NativeGlContext::PrintGpuMemoryInfo()

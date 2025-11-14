@@ -366,7 +366,7 @@ bool EglGlContext::CreateGlContext(ContextBits theBits)
   return true;
 }
 
-void EglGlContext::PrintPlatformInfo()
+void EglGlContext::PrintPlatformInfo(bool theToPrintExtensions)
 {
   if (myEglDisp == EGL_NO_DISPLAY)
     return;
@@ -374,8 +374,11 @@ void EglGlContext::PrintPlatformInfo()
   std::cout << "[" << myPlatform << "] EGLVersion:    " << eglQueryString(myEglDisp, EGL_VERSION) << "\n";
   std::cout << "[" << myPlatform << "] EGLVendor:     " << eglQueryString(myEglDisp, EGL_VENDOR) << "\n";
   std::cout << "[" << myPlatform << "] EGLClientAPIs: " << eglQueryString(myEglDisp, EGL_CLIENT_APIS) << "\n";
-  std::cout << "[" << myPlatform << "] EGL extensions:\n";
-  printExtensions(eglQueryString(myEglDisp, EGL_EXTENSIONS));
+  if (theToPrintExtensions)
+  {
+    std::cout << "[" << myPlatform << "] EGL extensions:\n";
+    printExtensions(eglQueryString(myEglDisp, EGL_EXTENSIONS));
+  }
 }
 
 void EglGlContext::PrintVisuals(bool theIsVerbose)
