@@ -22,6 +22,7 @@ public:
 
 public:
 
+  //! Return message prefix.
   std::string Prefix() const
   {
     return std::string("[") + PlatformName() + "] " + ApiName() + ProfileSuffix() + " ";

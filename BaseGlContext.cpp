@@ -58,8 +58,7 @@ void BaseGlContext::printExtensions(const char* theExt)
 
       if (aLen > 0)
       {
-        if (aLineLen != 0
-            && aLineLen + aLen + 2 > THE_LINE_LEN)
+        if (aLineLen != 0 && aLineLen + aLen + 2 > THE_LINE_LEN)
         {
           std::cout << "\n";
           aLineLen = 0;

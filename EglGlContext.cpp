@@ -4,6 +4,7 @@
 
 #include "EglGlContext.h"
 
+#include <cstring>
 #include <string>
 #include <iomanip>
 #include <iostream>
@@ -14,6 +15,7 @@
   #endif
 #endif
 
+#ifdef _WIN32
 #define EGL_TRUE                          1
 #define EGL_ALPHA_SIZE                    0x3021
 #define EGL_BAD_ACCESS                    0x3002
@@ -125,6 +127,15 @@
 #define EGL_VG_COLORSPACE_LINEAR          0x308A
 #define EGL_VG_COLORSPACE_LINEAR_BIT      0x0020
 
+#define EGL_CONTEXT_MAJOR_VERSION         0x3098
+#define EGL_CONTEXT_MINOR_VERSION         0x30FB
+#define EGL_CONTEXT_OPENGL_PROFILE_MASK   0x30FD
+#define EGL_CONTEXT_OPENGL_CORE_PROFILE_BIT 0x00000001
+#define EGL_CONTEXT_OPENGL_COMPATIBILITY_PROFILE_BIT 0x00000002
+#define EGL_CONTEXT_OPENGL_DEBUG          0x31B0
+#define EGL_CONTEXT_OPENGL_FORWARD_COMPATIBLE 0x31B1
+#define EGL_CONTEXT_OPENGL_ROBUST_ACCESS  0x31B2
+
 //! Auxiliary template to retrieve function pointer within libEGL.dll.
 template<typename FuncType_t> bool EglGlContext::findEglDllProc(const char* theFuncName, FuncType_t& theFuncPtr)
 {
@@ -135,25 +146,29 @@ template<typename FuncType_t> bool EglGlContext::findEglDllProc(const char* theF
 #endif
   return (theFuncPtr != NULL);
 }
+#endif
 
 void* EglGlContext::GlGetProcAddress(const char* theFuncName)
 {
+#ifdef _WIN32
   return eglGetProcAddress != NULL ? (void*)eglGetProcAddress(theFuncName) : NULL;
+#else
+  return (void*)eglGetProcAddress(theFuncName);
+#endif
 }
 
 EglGlContext::EglGlContext(const std::string& theTitle)
-: myEglDll(NULL), myEglDisp(EGL_NO_DISPLAY), myEglContext(EGL_NO_CONTEXT), myEglSurf(EGL_NO_SURFACE),
-  myWin(theTitle)
+: myWin(theTitle)
 {
   //
 }
 
 bool EglGlContext::LoadEglLibrary(bool theIsMandatory)
 {
+#ifdef _WIN32
   if (myEglDll != NULL)
     return true;
 
-#ifdef _WIN32
 #define findEglDllProcShort(theFunc) findEglDllProc(#theFunc, theFunc)
 
   myEglDll = LoadLibraryW(L"libEGL.dll");
@@ -189,7 +204,8 @@ bool EglGlContext::LoadEglLibrary(bool theIsMandatory)
   }
   return true;
 #else
-  return false;
+  (void)theIsMandatory;
+  return true;
 #endif
 }
 
@@ -205,9 +221,8 @@ void EglGlContext::Release()
   if (myEglContext != EGL_NO_CONTEXT)
   {
     if (eglMakeCurrent(myEglDisp, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT) != EGL_TRUE)
-    {
       std::cerr << "Error: FAILED to release OpenGL context!\n";
-    }
+
     eglDestroyContext(myEglDisp, myEglContext);
     myEglContext = EGL_NO_CONTEXT;
   }
@@ -215,9 +230,8 @@ void EglGlContext::Release()
   if (myEglDisp != EGL_NO_DISPLAY)
   {
     if (eglTerminate(myEglDisp) != EGL_TRUE)
-    {
       std::cerr << "Error: EGL, eglTerminate FAILED!\n";
-    }
+
     myEglDisp = EGL_NO_DISPLAY;
   }
 }
@@ -269,20 +283,32 @@ bool EglGlContext::CreateGlContext(ContextBits theBits)
     return false;
 
   myCtxBits = theBits;
-  const bool isGles = (theBits & ContextBits_GLES) != 0;
+
+  const bool isDebugCtx = (theBits & ContextBits_Debug) != 0;
+  const bool isCoreCtx  = (theBits & ContextBits_CoreProfile) != 0;
+  const bool isSoftCtx  = (theBits & ContextBits_SoftProfile) != 0;
+  const bool isGles     = (theBits & ContextBits_GLES) != 0;
+  if (isSoftCtx)
+    return false;
+
   if (!myWin.Create())
   {
+    Release();
     return false;
   }
 
-  myEglDisp = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+  if (myWin.GetDisplay() != 0)
+    myEglDisp = eglGetDisplay((EGLNativeDisplayType)myWin.GetDisplay());
+  else
+    myEglDisp = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+
   if (myEglDisp == EGL_NO_DISPLAY)
   {
     std::cerr << "Error: no EGL display!\n";
     return false;
   }
 
-  EGLint aVerMajor = 0; EGLint aVerMinor = 0;
+  EGLint aVerMajor = 0, aVerMinor = 0;
   if (eglInitialize(myEglDisp, &aVerMajor, &aVerMinor) != EGL_TRUE)
   {
     std::cerr << "Error: EGL display is unavailable!\n";
@@ -334,17 +360,54 @@ bool EglGlContext::CreateGlContext(ContextBits theBits)
     return false;
   }
 
-  EGLint  anEglCtxAttribsArr2[] = {EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE, EGL_NONE};
-  EGLint  anEglCtxAttribsArr3[] = {EGL_CONTEXT_CLIENT_VERSION, 3, EGL_NONE, EGL_NONE};
-  EGLint* anEglCtxAttribs = isGles ? (hasGLES3 ? anEglCtxAttribsArr3 : anEglCtxAttribsArr2) : NULL;
-  myEglContext = eglCreateContext(myEglDisp, anEglCfg, EGL_NO_CONTEXT, anEglCtxAttribs);
-  if (myEglContext == EGL_NO_CONTEXT && hasGLES3)
+  if (isGles)
   {
-    myEglContext = eglCreateContext(myEglDisp, anEglCfg, EGL_NO_CONTEXT, anEglCtxAttribsArr2);
+    EGLint aCtxAttribs[] =
+    {
+      EGL_CONTEXT_CLIENT_VERSION, hasGLES3 ? 3 : 2, EGL_NONE, EGL_NONE
+    };
+
+    myEglContext = eglCreateContext(myEglDisp, anEglCfg, EGL_NO_CONTEXT, aCtxAttribs);
+    if (myEglContext == EGL_NO_CONTEXT && hasGLES3)
+    {
+      aCtxAttribs[1] = 2;
+      myEglContext = eglCreateContext(myEglDisp, anEglCfg, EGL_NO_CONTEXT, aCtxAttribs);
+    }
   }
+  else if (theBits != 0)
+  {
+    EGLint aCtxAttribs[] =
+    {
+      EGL_CONTEXT_MAJOR_VERSION, 3,
+      EGL_CONTEXT_MINOR_VERSION, 2,
+      EGL_CONTEXT_OPENGL_PROFILE_MASK, isCoreCtx ? EGL_CONTEXT_OPENGL_CORE_PROFILE_BIT : EGL_CONTEXT_OPENGL_COMPATIBILITY_PROFILE_BIT,
+      EGL_CONTEXT_OPENGL_DEBUG, isDebugCtx ? EGL_TRUE : EGL_FALSE,
+      EGL_CONTEXT_OPENGL_FORWARD_COMPATIBLE, EGL_FALSE,
+      EGL_NONE, EGL_NONE
+    };
+
+    // try to create the core profile of highest OpenGL version
+    for (int aLowVer4 = 5; aLowVer4 >= 0 && myEglContext == EGL_NO_CONTEXT; --aLowVer4)
+    {
+      aCtxAttribs[1] = 4;
+      aCtxAttribs[3] = aLowVer4;
+      myEglContext = eglCreateContext(myEglDisp, anEglCfg, EGL_NO_CONTEXT, aCtxAttribs);
+    }
+    for (int aLowVer3 = 3; aLowVer3 >= 2 && myEglContext == EGL_NO_CONTEXT; --aLowVer3)
+    {
+      aCtxAttribs[1] = 3;
+      aCtxAttribs[3] = aLowVer3;
+      myEglContext = eglCreateContext(myEglDisp, anEglCfg, EGL_NO_CONTEXT, aCtxAttribs);
+    }
+  }
+  else
+  {
+    myEglContext = eglCreateContext(myEglDisp, anEglCfg, EGL_NO_CONTEXT, NULL);
+  }
+
   if (myEglContext == EGL_NO_CONTEXT)
   {
-    std::cerr << "Error: EGL is unable to create OpenGL context!\n";
+    //std::cerr << "Error: EGL is unable to create OpenGL context!\n";
     return false;
   }
 
@@ -381,8 +444,10 @@ void EglGlContext::PrintPlatformInfo(bool theToPrintExtensions)
 
 void EglGlContext::PrintVisuals(bool theIsVerbose)
 {
+#ifdef _WIN32
   if (myEglDll == NULL)
     return;
+#endif
 
   struct EGLConfigAttribs
   {

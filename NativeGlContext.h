@@ -7,9 +7,22 @@
 
 #ifdef _WIN32
   #include <windows.h>
+#else
+  #include <GL/glx.h> // glXGetProcAddress()
 #endif
 
 #include "BaseGlContext.h"
+
+#if defined(__APPLE__)
+  #ifdef __OBJC__
+    @class NSOpenGLContext;
+  #else
+    struct NSOpenGLContext;
+  #endif
+  typedef NSOpenGLContext* NativeRenderingContext;
+#else
+  typedef void* NativeRenderingContext; // GLXContext under UNIX
+#endif
 
 //! Native GL context.
 class NativeGlContext : public BaseGlContext
@@ -100,8 +113,11 @@ private:
 private:
 
   NativeWindow myWin;
+  NativeRenderingContext myRendCtx = 0; //!< rendering context: GLXContext on Linux, HGLRC on Windows
+
+#ifdef _WIN32
   HDC   myDevCtx = NULL;
-  HGLRC myGlCtx = NULL;
+#endif
 
 };
 

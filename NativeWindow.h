@@ -12,6 +12,7 @@ typedef void* NativeDrawable; // HWND under WNT
 #else
 typedef unsigned long NativeDrawable; // Window or Pixmap under UNIX
 #endif
+struct NativeXDisplay;
 
 //! Native window creation tool.
 class NativeWindow
@@ -29,6 +30,9 @@ public:
   //! Return native handle.
   NativeDrawable GetDrawable() const { return myHandle; }
 
+  //! Return native display.
+  NativeXDisplay* GetDisplay() const { return myDisplay; }
+
   //! Create a window handle.
   bool Create();
 
@@ -44,8 +48,12 @@ protected:
   void destroyWindow();
 
 private:
-  NativeDrawable myHandle;
-  std::string    myTitle;
+
+  std::string myTitle;
+
+  NativeDrawable  myHandle  = 0;
+  NativeXDisplay* myDisplay = NULL;
+
 };
 
 #endif // NATIVEWINDOW_HEADER

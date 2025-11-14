@@ -192,7 +192,11 @@ bool WglInfo::parseArguments(int theNbArgs, const char** theArgVec)
         {
           myToShowEgl = true;
         }
-        else if (aVal == "wgl")
+      #ifdef _WIN32
+        else if (aVal == "wgl" || aVal == "native")
+      #else
+        else if (aVal == "glx" || aVal == "native")
+      #endif
         {
           myToShowWgl = true;
         }
@@ -214,7 +218,11 @@ bool WglInfo::parseArguments(int theNbArgs, const char** theArgVec)
       myToShowEgl = true;
       myToShowWgl = false;
     }
-    else if (anArg == "wgl")
+  #ifdef _WIN32
+    else if (anArg == "wgl" || anArg == "native")
+  #else
+    else if (anArg == "glx" || anArg == "native")
+  #endif
     {
       myToShowEgl = false;
       myToShowWgl = true;
@@ -314,7 +322,7 @@ void WglInfo::printHelp(const char* theName)
     "  -B             Brief output, print only the basics.\n"
     "  -v             Print visuals info in verbose form.\n"
     "  -h             This information.\n"
-    "  --platform     Platform (EGL/WGL) to create context;\n"
+    "  --platform     Platform (EGL|WGL) to create context;\n"
     "                 by default all available platforms will be evaluated.\n"
     "  --api          Api (OpenGL or OpenGL ES) to create context;\n"
     "                 by default all available APIs will be evaluated.\n"
@@ -322,7 +330,7 @@ void WglInfo::printHelp(const char* theName)
     "                 by default several main profiles will be evaluated.\n"
     "  --gpumemory    Print only GPU memory info (suppresses all other info).\n"
     "  --first        Print only first context.\n"
-    "  --noplatform   Do not print platform (EGL/WGL) info.\n"
+    "  --noplatform   Do not print platform (EGL|WGL) info.\n"
     "  --norenderer   Do not print renderer info.\n"
     "  --noextensions Do not list extensions.\n"
     "  --novisuals    Do not list visuals, same as -B.\n"
@@ -430,6 +438,7 @@ void WglInfo::printSystemInfo()
 #endif
   std::cout << ")";
 
+#ifdef _WIN32
   // suppress GetVersionExW is deprecated warning
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -443,6 +452,7 @@ void WglInfo::printSystemInfo()
   }
 #ifdef _MSC_VER
 #pragma warning(pop)
+#endif
 #endif
 
   std::cout << "\n\n";

@@ -78,6 +78,13 @@ if (WIN32)
 endif()
 target_link_libraries (${PROJECT_NAME} PRIVATE ${OPENGL_LIBRARIES})
 
+if (UNIX)
+  target_link_libraries (${PROJECT_NAME} PRIVATE EGL)
+  target_link_libraries (${PROJECT_NAME} PRIVATE X11)
+  target_link_libraries (${PROJECT_NAME} PRIVATE dl)
+  target_link_libraries (${PROJECT_NAME} PRIVATE pthread)
+endif()
+
 # force static linking to winpthreads
 if (WIN32 AND CMAKE_COMPILER_IS_GNUCXX)
   target_link_libraries (${PROJECT_NAME} PRIVATE -static gcc stdc++ winpthread -dynamic)
