@@ -209,7 +209,7 @@ bool EglGlContext::LoadEglLibrary(bool theIsMandatory)
 #endif
 }
 
-void EglGlContext::Release()
+void EglGlContext::release()
 {
   if (myEglSurf != EGL_NO_SURFACE)
   {

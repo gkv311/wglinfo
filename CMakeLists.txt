@@ -56,10 +56,14 @@ set (USED_SRCFILES
   "BaseGlContext.cpp"
   "EglGlContext.h"
   "EglGlContext.cpp"
+  "GlxContext.h"
+  "GlxContext.cpp"
   "NativeGlContext.h"
   "NativeGlContext.cpp"
   "NativeWindow.h"
   "NativeWindow.cpp"
+  "WglContext.h"
+  "WglContext.cpp"
   "wglinfo.cpp"
 )
 set (USED_RCFILE "")

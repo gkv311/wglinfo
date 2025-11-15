@@ -23,7 +23,7 @@ public:
   EglGlContext(const std::string& theTitle);
 
   //! Destructor.
-  ~EglGlContext() { Release(); }
+  ~EglGlContext() { release(); }
 
   //! Load EGL library.
   bool LoadEglLibrary(bool theIsMandatory = false);
@@ -32,7 +32,7 @@ public:
   virtual const char* PlatformName() const override { return "EGL"; }
 
   //! Release resources.
-  virtual void Release() override;
+  virtual void Release() override { release(); }
 
   //! Create a GL context.
   virtual bool CreateGlContext(ContextBits theBits) override;
@@ -66,6 +66,9 @@ public:
   virtual void* GlGetProcAddress(const char* theFuncName) override;
 
 private:
+
+  //! Release resources.
+  void release();
 
 #ifdef _WIN32
   // some declarations from EGL.h
