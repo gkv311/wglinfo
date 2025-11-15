@@ -76,6 +76,7 @@ endif()
 # main project target
 add_executable (${PROJECT_NAME}
   ${USED_SRCFILES} ${USED_RCFILE} ${USED_MANFILES}
+  README.md LICENSE.txt
 )
 if (WIN32)
   target_link_libraries (${PROJECT_NAME} PRIVATE gdi32 user32)
