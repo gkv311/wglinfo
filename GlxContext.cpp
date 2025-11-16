@@ -52,6 +52,7 @@ bool GlxContext::CreateGlContext(ContextBits theBits)
 
   const bool isDebugCtx = (theBits & ContextBits_Debug) != 0;
   const bool isCoreCtx  = (theBits & ContextBits_CoreProfile) != 0;
+  const bool isFwdCtx   = (theBits & ContextBits_ForwardProfile) != 0;
   const bool isSoftCtx  = (theBits & ContextBits_SoftProfile) != 0;
   const bool isGles     = (theBits & ContextBits_GLES) != 0;
 
@@ -158,8 +159,8 @@ bool GlxContext::CreateGlContext(ContextBits theBits)
   {
     GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
     GLX_CONTEXT_MINOR_VERSION_ARB, 2,
-    GLX_CONTEXT_PROFILE_MASK_ARB,  isCoreCtx ? GLX_CONTEXT_CORE_PROFILE_BIT_ARB : GLX_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB,
-    GLX_CONTEXT_FLAGS_ARB,         isDebugCtx ? GLX_CONTEXT_DEBUG_BIT_ARB : 0,
+    GLX_CONTEXT_PROFILE_MASK_ARB,  (isCoreCtx || isFwdCtx) ? GLX_CONTEXT_CORE_PROFILE_BIT_ARB : GLX_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB,
+    GLX_CONTEXT_FLAGS_ARB,         (isDebugCtx ? GLX_CONTEXT_DEBUG_BIT_ARB : 0) | (isFwdCtx ? GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB : 0),
     0, 0
   };
 

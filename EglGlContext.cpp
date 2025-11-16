@@ -285,6 +285,7 @@ bool EglGlContext::CreateGlContext(ContextBits theBits)
   myCtxBits = theBits;
 
   const bool isDebugCtx = (theBits & ContextBits_Debug) != 0;
+  const bool isFwdCtx   = (theBits & ContextBits_ForwardProfile) != 0;
   const bool isCoreCtx  = (theBits & ContextBits_CoreProfile) != 0;
   const bool isSoftCtx  = (theBits & ContextBits_SoftProfile) != 0;
   const bool isGles     = (theBits & ContextBits_GLES) != 0;
@@ -395,7 +396,7 @@ bool EglGlContext::CreateGlContext(ContextBits theBits)
       EGL_CONTEXT_MINOR_VERSION, 2,
       EGL_CONTEXT_OPENGL_PROFILE_MASK, isCoreCtx ? EGL_CONTEXT_OPENGL_CORE_PROFILE_BIT : EGL_CONTEXT_OPENGL_COMPATIBILITY_PROFILE_BIT,
       EGL_CONTEXT_OPENGL_DEBUG, isDebugCtx ? EGL_TRUE : EGL_FALSE,
-      EGL_CONTEXT_OPENGL_FORWARD_COMPATIBLE, EGL_FALSE,
+      EGL_CONTEXT_OPENGL_FORWARD_COMPATIBLE, isFwdCtx ? EGL_TRUE : EGL_FALSE,
       EGL_NONE, EGL_NONE
     };
 

@@ -176,7 +176,9 @@ void BaseGlContext::PrintGpuMemoryInfo()
 
 std::string BaseGlContext::getGlExtensions()
 {
-  if ((myCtxBits & ContextBits_GLES) != 0 || (myCtxBits & ContextBits_CoreProfile) == 0)
+  if ((myCtxBits & ContextBits_GLES) != 0)
+    return ((const char*)GlGetString(GL_EXTENSIONS));
+  else if ((myCtxBits & ContextBits_CoreProfile) == 0 && (myCtxBits & ContextBits_ForwardProfile) == 0)
     return ((const char*)GlGetString(GL_EXTENSIONS));
 
   int anExtNb = 0;

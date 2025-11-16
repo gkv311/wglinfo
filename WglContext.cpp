@@ -159,6 +159,7 @@ bool WglContext::CreateGlContext(ContextBits theBits)
   myCtxBits = theBits;
 
   const bool isDebugCtx = (theBits & ContextBits_Debug) != 0;
+  const bool isFwdCtx   = (theBits & ContextBits_ForwardProfile) != 0;
   const bool isCoreCtx  = (theBits & ContextBits_CoreProfile) != 0;
   const bool isSoftCtx  = (theBits & ContextBits_SoftProfile) != 0;
   const bool isGles     = (theBits & ContextBits_GLES) != 0;
@@ -212,7 +213,7 @@ bool WglContext::CreateGlContext(ContextBits theBits)
   }
 
   int aProfileBit = WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB;
-  if (isCoreCtx)
+  if (isCoreCtx || isFwdCtx)
     aProfileBit = WGL_CONTEXT_CORE_PROFILE_BIT_ARB;
   if (isGles)
     aProfileBit = WGL_CONTEXT_ES_PROFILE_BIT_EXT;
@@ -241,14 +242,14 @@ bool WglContext::CreateGlContext(ContextBits theBits)
       myRendCtx = aCreateCtxProc(myDevCtx, NULL, aGlesCtxAttribs);
     }
   }
-  else if (isCoreCtx || isDebugCtx)
+  else if (isCoreCtx || isDebugCtx || isFwdCtx)
   {
     int aCoreCtxAttribs[] =
     {
       WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
       WGL_CONTEXT_MINOR_VERSION_ARB, 2,
       WGL_CONTEXT_PROFILE_MASK_ARB,  aProfileBit,
-      WGL_CONTEXT_FLAGS_ARB,         isDebugCtx ? WGL_CONTEXT_DEBUG_BIT_ARB : 0,
+      WGL_CONTEXT_FLAGS_ARB,         (isDebugCtx ? WGL_CONTEXT_DEBUG_BIT_ARB : 0) | (isFwdCtx ? WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB : 0),
       0, 0
     };
 

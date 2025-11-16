@@ -13,11 +13,12 @@ class BaseGlContext
 public:
   enum ContextBits
   {
-    ContextBits_NONE        = 0x000,
-    ContextBits_Debug       = 0x001,
-    ContextBits_CoreProfile = 0x002,
-    ContextBits_SoftProfile = 0x004,
-    ContextBits_GLES        = 0x008,
+    ContextBits_NONE           = 0x000,
+    ContextBits_Debug          = 0x001,
+    ContextBits_ForwardProfile = 0x002,
+    ContextBits_CoreProfile    = 0x004,
+    ContextBits_SoftProfile    = 0x008,
+    ContextBits_GLES           = 0x010,
   };
 
 public:
@@ -38,6 +39,8 @@ public:
       return "";
     else if ((myCtxBits & ContextBits_CoreProfile) != 0)
       return " (core profile)";
+    else if ((myCtxBits & ContextBits_ForwardProfile) != 0)
+      return " (forward profile)";
     else if ((myCtxBits & ContextBits_SoftProfile) != 0)
       return " (software)";
 

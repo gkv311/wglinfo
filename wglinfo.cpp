@@ -58,6 +58,7 @@ private:
   bool myIsCompatProfile = true;
   bool myIsCoreProfile = true;
   bool myIsSoftProfile = true;
+  bool myIsFwdProfile = false;
 
   bool myIsFirstOnly = false;
   bool myIsVerbose = false;
@@ -269,7 +270,7 @@ bool WglInfo::parseArguments(int theNbArgs, const char** theArgVec)
         myToShowGl = true;
         myToShowGles = false;
       }
-      myIsCompatProfile = myIsCoreProfile = myIsSoftProfile = false;
+      myIsCompatProfile = myIsCoreProfile = myIsSoftProfile = myIsFwdProfile = false;
       if (aVal == "*")
       {
         myIsCompatProfile = myIsCoreProfile = myIsSoftProfile = true;
@@ -282,6 +283,10 @@ bool WglInfo::parseArguments(int theNbArgs, const char** theArgVec)
       else if (aVal == "core" || aVal == "core_profile" || aVal == "core profile")
       {
         myIsCoreProfile = true;
+      }
+      else if (aVal == "fwd" || aVal == "forward" || aVal == "forward_profile" || aVal == "forward profile")
+      {
+        myIsFwdProfile = true;
       }
       else if (aVal == "soft" || aVal == "noacc" || aVal == "no_acceleration")
       {
@@ -346,6 +351,9 @@ std::vector<BaseGlContext::ContextBits> WglInfo::printWglInfo()
 
   if (myToShowGl && myIsCoreProfile)
     anOptions.push_back(BaseGlContext::ContextBits_CoreProfile);
+
+  if (myToShowGl && myIsFwdProfile)
+      anOptions.push_back(BaseGlContext::ContextBits_ForwardProfile);
 
   if (myToShowGles)
     anOptions.push_back(BaseGlContext::ContextBits_GLES);
