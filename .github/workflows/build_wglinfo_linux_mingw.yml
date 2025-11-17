@@ -1,0 +1,51 @@
+# This workflow will build wglinfo on Linux for Windows
+name: Build (Linux/MinGW64)
+
+on: [push]
+
+jobs:
+  build-ubuntu:
+    runs-on: ubuntu-24.04
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4.1.7
+      with:
+        fetch-depth: 0
+
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          g++ cmake ninja-build \
+          mingw-w64 mingw-w64-common mingw-w64-tools binutils-mingw-w64-x86-64 g++-mingw-w64-x86-64 gcc-mingw-w64-x86-64 \
+          xvfb wine
+
+    - name: Configure wglinfo
+      run: |
+        mkdir "build"
+        TOOLCHAIN_PREFIX=x86_64-w64-mingw32
+        aToolChain=./build/x86_64-w64-mingw32.cmake
+        echo "set(CMAKE_SYSTEM_NAME Windows)" > $aToolChain
+        echo "set(CMAKE_C_COMPILER   ${TOOLCHAIN_PREFIX}-gcc)" >> $aToolChain
+        echo "set(CMAKE_CXX_COMPILER ${TOOLCHAIN_PREFIX}-g++)" >> $aToolChain
+        echo "set(CMAKE_RC_COMPILER  ${TOOLCHAIN_PREFIX}-windres)" >> $aToolChain
+        echo "set(CMAKE_FIND_ROOT_PATH /usr/${TOOLCHAIN_PREFIX})" >> $aToolChain
+        echo "set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)" >> $aToolChain
+        echo "set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)" >> $aToolChain
+        echo "set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)" >> $aToolChain
+        cmake -G Ninja -D BUILD_TREAT_WARNINGS_AS_ERRORS=ON -D CMAKE_TOOLCHAIN_FILE="$aToolChain" -S . -B "./build"
+
+    - name: Build wglinfo
+      run: |      
+        cmake --build "./build" --config Release
+
+    - name: Run wglinfo
+      run: |
+        xvfb-run wine ./build/wglinfo.exe
+        xvfb-run wine ./build/wglinfo.exe > wglinfo.log
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: wglinfo-linux-mingw
+        path: build/wglinfo.exe

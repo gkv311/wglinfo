@@ -1,5 +1,5 @@
 # This workflow will build wglinfo on Windows
-name: Build (MinGW64)
+name: Build (Windows/MinGW64)
 
 on: [push]
 

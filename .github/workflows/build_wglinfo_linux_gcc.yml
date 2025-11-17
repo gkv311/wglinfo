@@ -1,5 +1,5 @@
 # This workflow will build wglinfo on Linux
-name: Build (Ubuntu 24.04)
+name: Build (Linux/GCC)
 
 on: [push]
 
