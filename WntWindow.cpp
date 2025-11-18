@@ -6,35 +6,30 @@
   #include <windows.h>
 #endif
 
-#include "NativeWindow.h"
+#include "WntWindow.h"
 
-#ifndef _WIN32
-  #include <X11/Xlib.h>
-  #include <X11/Xutil.h>
-#endif
+#ifdef _WIN32
 
 #include <cstring>
 #include <iomanip>
 #include <iostream>
 
-#ifdef _WIN32
 //! Dummy window procedure.
 static LRESULT WINAPI windowProcWgl(HWND theWin, UINT theMsg, WPARAM theParamW, LPARAM theParamL)
 {
   return ::DefWindowProcW(theWin, theMsg, theParamW, theParamL);
 }
-#endif
 
-NativeWindow::NativeWindow(const std::string& theTitle)
+WntWindow::WntWindow(const std::string& theTitle)
 : myTitle(theTitle)
 {
   //
 }
 
-bool NativeWindow::Create()
+bool WntWindow::Create()
 {
   Destroy();
-#ifdef _WIN32
+
   WNDCLASSW aWinClass;
   aWinClass.lpszClassName = L"OpenGL";
   static HINSTANCE anAppInstance = NULL;
@@ -69,81 +64,19 @@ bool NativeWindow::Create()
     return false;
   }
   return true;
-#else
-  if (myDisplay == NULL)
-  {
-    myDisplay = (NativeXDisplay* )XOpenDisplay(NULL);
-  }
-  if (myDisplay == NULL)
-  {
-    std::cerr << "Error: cannot connect to the X11 server\n";
-    return false;
-  }
-
-  XVisualInfo* aVisInfo = NULL;
-
-  Display* aDisp   = (Display*)myDisplay;
-  int      aScreen = DefaultScreen(aDisp);
-  Window   aParent = RootWindow(aDisp, aScreen);
-
-  unsigned long aMask = 0;
-  XSetWindowAttributes aWinAttr;
-  memset(&aWinAttr, 0, sizeof(XSetWindowAttributes));
-  aWinAttr.event_mask = ExposureMask | StructureNotifyMask;
-  aMask |= CWEventMask;
-  if (aVisInfo != NULL)
-  {
-    aWinAttr.colormap = XCreateColormap(aDisp, aParent, aVisInfo->visual, AllocNone);
-  }
-  aWinAttr.border_pixel = 0;
-  aWinAttr.override_redirect = False;
-
-  myHandle = XCreateWindow(aDisp, aParent,
-                           2, 2, 4, 4,
-                           0, aVisInfo != NULL ? aVisInfo->depth : CopyFromParent,
-                           InputOutput,
-                           aVisInfo != NULL ? aVisInfo->visual : CopyFromParent,
-                           CWBorderPixel | CWColormap | CWEventMask | CWOverrideRedirect, &aWinAttr);
-  if (aVisInfo != NULL)
-  {
-    XFree(aVisInfo);
-    aVisInfo = NULL;
-  }
-  if (myHandle == 0)
-  {
-    std::cerr << "Error: unable to create XWindow\n";
-    return false;
-  }
-
-  return true;
-#endif
 }
 
-void NativeWindow::destroyWindow()
+void WntWindow::destroyWindow()
 {
-#ifdef _WIN32
   if (myHandle != NULL)
   {
     ::DestroyWindow((HWND)myHandle);
     myHandle = NULL;
   }
-#else
-  if (myHandle != 0)
-  {
-    XDestroyWindow((Display* )myDisplay, (Window )myHandle);
-    myHandle = 0;
-  }
-  if (myDisplay != NULL)
-  {
-    XCloseDisplay((Display* )myDisplay);
-    myDisplay = NULL;
-  }
-#endif
 }
 
-void NativeWindow::Quit()
+void WntWindow::Quit()
 {
-#ifdef _WIN32
   if (IsNull())
     return;
 
@@ -153,5 +86,6 @@ void NativeWindow::Quit()
     TranslateMessage(&aMsg);
     DispatchMessageW(&aMsg);
   }
-#endif
 }
+
+#endif // _WIN32

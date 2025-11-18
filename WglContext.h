@@ -106,7 +106,7 @@ private:
 
 private:
 
-  NativeWindow myWin;
+  WntWindow myWin;
   NativeRenderingContext myRendCtx = 0; //!< HGLRC rendering context
 
   HDC myDevCtx = NULL;

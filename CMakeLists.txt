@@ -54,17 +54,20 @@ find_package (OpenGL REQUIRED)
 set (USED_SRCFILES
   "BaseGlContext.h"
   "BaseGlContext.cpp"
+  "BaseWindow.h"
   "EglGlContext.h"
   "EglGlContext.cpp"
   "GlxContext.h"
   "GlxContext.cpp"
   "NativeGlContext.h"
-  "NativeGlContext.cpp"
   "NativeWindow.h"
-  "NativeWindow.cpp"
+  "WntWindow.h"
+  "WntWindow.cpp"
   "WglContext.h"
   "WglContext.cpp"
   "wglinfo.cpp"
+  "XwWindow.h"
+  "XwWindow.cpp"
 )
 set (USED_RCFILE "")
 set (USED_MANFILES "")

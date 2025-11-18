@@ -70,7 +70,7 @@ private:
 
 private:
 
-  NativeWindow myWin;
+  XwWindow myWin;
   NativeRenderingContext myRendCtx = 0; //!< GLXContext rendering context
 
 };
