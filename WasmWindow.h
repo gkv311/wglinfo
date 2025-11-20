@@ -12,10 +12,13 @@ class WasmWindow : public BaseWindow
 {
 public:
   //! Empty constructor.
-  WasmWindow(const std::string& theTitle) : myTitle(theTitle) {}
+  WasmWindow(const std::string& theTitle);
 
   //! Destructor.
   ~WasmWindow() { destroyWindow(); }
+
+  //! Return canvas id.
+  const std::string& GetCanvasId() const { return myCanvasId; }
 
   //! Return true if handle is NULL.
   virtual bool IsNull() const override { return true; }
@@ -27,7 +30,7 @@ public:
   virtual NativeXDisplay* GetDisplay() const override { return 0; }
 
   //! Create a window handle.
-  virtual bool Create() override { return true; }
+  virtual bool Create() override;
 
   //! Close window.
   virtual void Destroy() override { destroyWindow(); }
@@ -35,11 +38,12 @@ public:
 protected:
 
   //! Close window.
-  void destroyWindow() {}
+  void destroyWindow();
 
 private:
 
   std::string myTitle;
+  std::string myCanvasId;
 
 };
 

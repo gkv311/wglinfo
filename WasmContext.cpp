@@ -68,11 +68,13 @@ bool WasmContext::CreateGlContext(ContextBits theBits)
   aCtxAttribs.majorVersion = 2;
   aCtxAttribs.minorVersion = 0;
 
-  myRendCtx = emscripten_webgl_create_context("#canvas", &aCtxAttribs);
+  const std::string aCanvas = std::string("#") + myWin.GetCanvasId();
+
+  myRendCtx = emscripten_webgl_create_context(aCanvas.c_str(), &aCtxAttribs);
   if (myRendCtx == 0)
   {
     aCtxAttribs.majorVersion = 1;
-    myRendCtx = emscripten_webgl_create_context("#canvas", &aCtxAttribs);
+    myRendCtx = emscripten_webgl_create_context(aCanvas.c_str(), &aCtxAttribs);
   }
 
   if (!MakeCurrent())
