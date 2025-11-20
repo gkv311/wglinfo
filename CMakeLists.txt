@@ -66,6 +66,7 @@ set (USED_SRCFILES
   "NativeGlContext.h"
   "NativeWindow.h"
   "WasmContext.h"
+  "WasmContext.cpp"
   "WasmWindow.h"
   "WntWindow.h"
   "WntWindow.cpp"

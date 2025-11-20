@@ -8,13 +8,15 @@
 #include "BaseGlContext.h"
 #include "WasmWindow.h"
 
-//! Emsdk WebGL context - not implemented.
+#include <cstdint>
+
+//! Emsdk WebGL context.
 class WasmContext : public BaseGlContext
 {
 public:
 
   //! Empty constructor.
-  WasmContext(const std::string& theName) : myWin(theName) {}
+  WasmContext(const std::string& theName);
 
   //! Destructor.
   ~WasmContext() { release(); }
@@ -26,18 +28,15 @@ public:
   virtual void Release() override { release(); }
 
   //! Create a GL context.
-  virtual bool CreateGlContext(ContextBits ) override { return false; }
+  virtual bool CreateGlContext(ContextBits ) override;
 
   //! Make this GL context active in current thread.
-  virtual bool MakeCurrent() override { return false; }
+  virtual bool MakeCurrent() override;
 
 public:
 
   //! Print platform info.
-  virtual void PrintPlatformInfo(bool ) override {}
-
-  //! Print GPU memory info.
-  virtual void PrintGpuMemoryInfo() override {}
+  virtual void PrintPlatformInfo(bool theToPrintExtensions) override;
 
   //! Print information about visuals.
   virtual void PrintVisuals(bool ) override {}
@@ -45,28 +44,28 @@ public:
 public:
 
   //! glGetError() wrapper.
-  virtual unsigned int GlGetError() override { return 0x0502; }
+  virtual unsigned int GlGetError() override;
 
   //! glGetString() wrapper.
-  virtual const char* GlGetString(unsigned int ) override { return nullptr; }
+  virtual const char* GlGetString(unsigned int theGlEnum) override;
 
   //! glGetStringi() wrapper.
-  virtual const char* GlGetStringi(unsigned int , unsigned int ) override { return nullptr; }
+  virtual const char* GlGetStringi(unsigned int theGlEnum, unsigned int theIndex) override;
 
   //! glGetIntegerv() wrapper.
-  virtual void GlGetIntegerv(unsigned int , int* ) override {}
+  virtual void GlGetIntegerv(unsigned int theGlEnum, int* theParams) override;
 
   //! Wrapper to system function to retrieve GL function pointer by name.
-  virtual void* GlGetProcAddress(const char* ) override { return nullptr; }
+  virtual void* GlGetProcAddress(const char* theFuncName) override;
 
 private:
 
   //! Release resources.
-  void release() {}
+  void release();
 
 private:
 
-  typedef void* NativeRenderingContext;
+  typedef intptr_t NativeRenderingContext; // EMSCRIPTEN_WEBGL_CONTEXT_HANDLE
 
 private:
 
