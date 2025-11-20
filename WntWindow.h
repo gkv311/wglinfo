@@ -30,7 +30,7 @@ public:
   virtual bool Create() override;
 
   //! Close window.
-  virtual void Destroy() { destroyWindow(); }
+  virtual void Destroy() override { destroyWindow(); }
 
   //! Post quit message.
   void Quit();

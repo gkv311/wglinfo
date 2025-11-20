@@ -10,6 +10,10 @@
 #include "EglGlContext.h"
 #include "NativeGlContext.h"
 
+#if defined(__EMSCRIPTEN__)
+  #include <emscripten/version.h>
+#endif
+
 #include <iomanip>
 #include <iostream>
 #include <string>
@@ -413,6 +417,12 @@ const char* WglInfo::getArchString()
 #else
   return "ARM 32-bit";
 #endif
+#elif defined(__EMSCRIPTEN__)
+#if defined(__LP64__)
+  return "WASM64";
+#else
+  return "WASM32";
+#endif
 #else
   return "UNKNOWN";
 #endif
@@ -443,7 +453,10 @@ void WglInfo::printSystemInfo()
   std::cout << "; MinGW64 " << __MINGW64_VERSION_MAJOR << "." << __MINGW64_VERSION_MINOR;
 #elif defined(__MINGW32__)
   std::cout << "; MinGW32 " << __MINGW32_MAJOR_VERSION << "." << __MINGW32_MINOR_VERSION;
+#elif defined(__EMSCRIPTEN__)
+  std::cout << "; Emscripten SDK " << __EMSCRIPTEN_major__ << "." << __EMSCRIPTEN_minor__ << "." << __EMSCRIPTEN_tiny__;
 #endif
+
   std::cout << ")";
 
 #ifdef _WIN32

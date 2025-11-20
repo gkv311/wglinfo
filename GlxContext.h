@@ -4,7 +4,7 @@
 
 #ifndef GLXCONTEXT_HEADER
 #define GLXCONTEXT_HEADER
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(__EMSCRIPTEN__)
 
 #include "BaseGlContext.h"
 

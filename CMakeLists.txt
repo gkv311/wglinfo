@@ -12,8 +12,12 @@ if (MSVC)
   string (REGEX REPLACE "/EHsc" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
   add_definitions (-D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE)
   # static linking with CRT
-  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
-  #set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+  set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+  #set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+elseif (EMSCRIPTEN)
+  set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions -fPIC")
+  set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s MAX_WEBGL_VERSION=2")
+  set (CMAKE_EXECUTABLE_SUFFIX ".html")
 else()
   set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions -fPIC")
   if (WIN32)
@@ -61,6 +65,8 @@ set (USED_SRCFILES
   "GlxContext.cpp"
   "NativeGlContext.h"
   "NativeWindow.h"
+  "WasmContext.h"
+  "WasmWindow.h"
   "WntWindow.h"
   "WntWindow.cpp"
   "WglContext.h"
@@ -81,12 +87,12 @@ add_executable (${PROJECT_NAME}
   ${USED_SRCFILES} ${USED_RCFILE} ${USED_MANFILES}
   README.md LICENSE.txt
 )
+target_link_libraries (${PROJECT_NAME} PRIVATE ${OPENGL_LIBRARIES})
 if (WIN32)
   target_link_libraries (${PROJECT_NAME} PRIVATE gdi32 user32)
-endif()
-target_link_libraries (${PROJECT_NAME} PRIVATE ${OPENGL_LIBRARIES})
-
-if (UNIX)
+elseif (EMSCRIPTEN)
+  #
+elseif (UNIX)
   target_link_libraries (${PROJECT_NAME} PRIVATE EGL)
   target_link_libraries (${PROJECT_NAME} PRIVATE X11)
   target_link_libraries (${PROJECT_NAME} PRIVATE dl)
