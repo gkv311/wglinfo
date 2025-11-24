@@ -1,11 +1,13 @@
 wglinfo - command line tool for printing OpenGL information on Windows platform
 =================================
 
-[![Downloads](https://img.shields.io/github/downloads/gkv311/wglinfo/total.svg)](https://github.com/gkv311/wglinfo/releases)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/gkv311/wglinfo/blob/master/LICENSE.txt)
-[![Status](https://github.com/gkv311/wglinfo/actions/workflows/build_wglinfo_msvc.yml/badge.svg?branch=master)](https://github.com/gkv311/wglinfo/actions?query=branch%3Amaster)
-[![Status](https://github.com/gkv311/wglinfo/actions/workflows/build_wglinfo_mingw.yml/badge.svg?branch=master)](https://github.com/gkv311/wglinfo/actions?query=branch%3Amaster)
-[![Status](https://github.com/gkv311/wglinfo/actions/workflows/build_wglinfo_ubuntu.yml/badge.svg?branch=master)](https://github.com/gkv311/wglinfo/actions?query=branch%3Amaster)
+![Downloads](https://img.shields.io/github/downloads/gkv311/wglinfo/total.svg)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE.txt)
+
+![Status](https://github.com/gkv311/wglinfo/actions/workflows/build_wglinfo_windows_msvc.yml/badge.svg?branch=master)
+![Status](https://github.com/gkv311/wglinfo/actions/workflows/build_wglinfo_windows_mingw.yml/badge.svg?branch=master)
+![Status](https://github.com/gkv311/wglinfo/actions/workflows/build_wglinfo_linux_gcc.yml/badge.svg?branch=master)
+![Status](https://github.com/gkv311/wglinfo/actions/workflows/build_wglinfo_linux_mingw.yml/badge.svg?branch=master)
 
 `wglinfo` is a small utility printing information about *OpenGL* library available in Windows system in similar way as `glxinfo` does on *Linux*.
 In case, if `libEGL.dll` (e.g. *Angle* or another implementation) is in `PATH`, it also prints information about `EGL`/`GLES`.
