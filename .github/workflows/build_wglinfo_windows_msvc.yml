@@ -26,19 +26,20 @@ jobs:
     - name: Configure wglinfo
       run: |
         mkdir "build"
-        cmake -T host=x64 -D BUILD_TREAT_WARNINGS_AS_ERRORS=ON -S . -B "./build"
+        cmake -T host=x64 -D BUILD_TREAT_WARNINGS_AS_ERRORS=ON -S . -B "./build" -D CMAKE_INSTALL_PREFIX="install"
 
     - name: Build wglinfo
       run: |
         cmake --build "./build" --config Release -- /m
+        cmake --build "./build" --config Release --target install
 
     - name: Run wglinfo
       run: |
-        build/Release/wglinfo.exe
-        build/Release/wglinfo.exe > wglinfo.log
+        install/wglinfo.exe
+        install/wglinfo.exe > install/wglinfo.log
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
         name: wglinfo-msvc
-        path: build/Release
+        path: install

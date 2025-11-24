@@ -33,19 +33,20 @@ jobs:
         echo "set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)" >> $aToolChain
         echo "set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)" >> $aToolChain
         echo "set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)" >> $aToolChain
-        cmake -G Ninja -D BUILD_TREAT_WARNINGS_AS_ERRORS=ON -D CMAKE_TOOLCHAIN_FILE="$aToolChain" -S . -B "./build"
+        cmake -G Ninja -D BUILD_TREAT_WARNINGS_AS_ERRORS=ON -D CMAKE_TOOLCHAIN_FILE="$aToolChain" -S . -B "./build" -D CMAKE_INSTALL_PREFIX="install"
 
     - name: Build wglinfo
       run: |      
         cmake --build "./build" --config Release
+        cmake --build "./build" --config Release --target install
 
     - name: Run wglinfo
       run: |
-        xvfb-run wine ./build/wglinfo.exe
-        xvfb-run wine ./build/wglinfo.exe > wglinfo.log
+        xvfb-run wine ./install/wglinfo.exe
+        xvfb-run wine ./install/wglinfo.exe > ./install/wglinfo.log
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
         name: wglinfo-linux-mingw
-        path: build/wglinfo.exe
+        path: install

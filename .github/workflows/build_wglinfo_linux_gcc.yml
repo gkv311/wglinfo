@@ -23,19 +23,20 @@ jobs:
     - name: Configure wglinfo
       run: |
         mkdir "build"
-        cmake -G Ninja -D BUILD_TREAT_WARNINGS_AS_ERRORS=ON -S . -B "./build"
+        cmake -G Ninja -D BUILD_TREAT_WARNINGS_AS_ERRORS=ON -S . -B "./build" -D CMAKE_INSTALL_PREFIX="install"
 
     - name: Build wglinfo
       run: |
         cmake --build "./build" --config Release
+        cmake --build "./build" --config Release --target install
 
     - name: Run wglinfo
       run: |
-        xvfb-run ./build/wglinfo
-        xvfb-run ./build/wglinfo > wglinfo.log
+        xvfb-run ./install/wglinfo
+        xvfb-run ./install/wglinfo > ./install/wglinfo.log
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
         name: wglinfo-linux
-        path: build/wglinfo
+        path: install
