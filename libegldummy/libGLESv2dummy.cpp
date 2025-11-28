@@ -1,0 +1,178 @@
+// Dummy project for generating libGLESv2.lib via MSVC for linking against DLLs built by MinGW.
+
+#include <windows.h>
+
+#include <KHR/khrplatform.h>
+
+typedef khronos_int8_t GLbyte;
+typedef khronos_float_t GLclampf;
+typedef khronos_int32_t GLfixed;
+typedef short GLshort;
+typedef unsigned short GLushort;
+typedef void GLvoid;
+typedef struct __GLsync *GLsync;
+typedef khronos_int64_t GLint64;
+typedef khronos_uint64_t GLuint64;
+typedef unsigned int GLenum;
+typedef unsigned int GLuint;
+typedef char GLchar;
+typedef khronos_float_t GLfloat;
+typedef khronos_ssize_t GLsizeiptr;
+typedef khronos_intptr_t GLintptr;
+typedef unsigned int GLbitfield;
+typedef int GLint;
+typedef unsigned char GLboolean;
+typedef int GLsizei;
+typedef khronos_uint8_t GLubyte;
+
+#define GL_APICALL __declspec(dllexport)
+#define GL_APIENTRY KHRONOS_APIENTRY
+#define EGLBODYV {}
+#define EGLBODY0 {return 0;}
+
+extern "C" {
+
+GL_APICALL void GL_APIENTRY glActiveTexture (GLenum texture) EGLBODYV;
+GL_APICALL void GL_APIENTRY glAttachShader (GLuint program, GLuint shader) EGLBODYV;
+GL_APICALL void GL_APIENTRY glBindAttribLocation (GLuint program, GLuint index, const GLchar *name) EGLBODYV;
+GL_APICALL void GL_APIENTRY glBindBuffer (GLenum target, GLuint buffer) EGLBODYV;
+GL_APICALL void GL_APIENTRY glBindFramebuffer (GLenum target, GLuint framebuffer) EGLBODYV;
+GL_APICALL void GL_APIENTRY glBindRenderbuffer (GLenum target, GLuint renderbuffer) EGLBODYV;
+GL_APICALL void GL_APIENTRY glBindTexture (GLenum target, GLuint texture) EGLBODYV;
+GL_APICALL void GL_APIENTRY glBlendColor (GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha) EGLBODYV;
+GL_APICALL void GL_APIENTRY glBlendEquation (GLenum mode) EGLBODYV;
+GL_APICALL void GL_APIENTRY glBlendEquationSeparate (GLenum modeRGB, GLenum modeAlpha) EGLBODYV;
+GL_APICALL void GL_APIENTRY glBlendFunc (GLenum sfactor, GLenum dfactor) EGLBODYV;
+GL_APICALL void GL_APIENTRY glBlendFuncSeparate (GLenum sfactorRGB, GLenum dfactorRGB, GLenum sfactorAlpha, GLenum dfactorAlpha) EGLBODYV;
+GL_APICALL void GL_APIENTRY glBufferData (GLenum target, GLsizeiptr size, const void *data, GLenum usage) EGLBODYV;
+GL_APICALL void GL_APIENTRY glBufferSubData (GLenum target, GLintptr offset, GLsizeiptr size, const void *data) EGLBODYV;
+GL_APICALL GLenum GL_APIENTRY glCheckFramebufferStatus (GLenum target) EGLBODY0;
+GL_APICALL void GL_APIENTRY glClear (GLbitfield mask) EGLBODYV;
+GL_APICALL void GL_APIENTRY glClearColor (GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha) EGLBODYV;
+GL_APICALL void GL_APIENTRY glClearDepthf (GLfloat d) EGLBODYV;
+GL_APICALL void GL_APIENTRY glClearStencil (GLint s) EGLBODYV;
+GL_APICALL void GL_APIENTRY glColorMask (GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha) EGLBODYV;
+GL_APICALL void GL_APIENTRY glCompileShader (GLuint shader) EGLBODYV;
+GL_APICALL void GL_APIENTRY glCompressedTexImage2D (GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const void *data) EGLBODYV;
+GL_APICALL void GL_APIENTRY glCompressedTexSubImage2D (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLsizei imageSize, const void *data) EGLBODYV;
+GL_APICALL void GL_APIENTRY glCopyTexImage2D (GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border) EGLBODYV;
+GL_APICALL void GL_APIENTRY glCopyTexSubImage2D (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height) EGLBODYV;
+GL_APICALL GLuint GL_APIENTRY glCreateProgram (void) EGLBODY0;
+GL_APICALL GLuint GL_APIENTRY glCreateShader (GLenum type) EGLBODY0;
+GL_APICALL void GL_APIENTRY glCullFace (GLenum mode) EGLBODYV;
+GL_APICALL void GL_APIENTRY glDeleteBuffers (GLsizei n, const GLuint *buffers) EGLBODYV;
+GL_APICALL void GL_APIENTRY glDeleteFramebuffers (GLsizei n, const GLuint *framebuffers) EGLBODYV;
+GL_APICALL void GL_APIENTRY glDeleteProgram (GLuint program) EGLBODYV;
+GL_APICALL void GL_APIENTRY glDeleteRenderbuffers (GLsizei n, const GLuint *renderbuffers) EGLBODYV;
+GL_APICALL void GL_APIENTRY glDeleteShader (GLuint shader) EGLBODYV;
+GL_APICALL void GL_APIENTRY glDeleteTextures (GLsizei n, const GLuint *textures) EGLBODYV;
+GL_APICALL void GL_APIENTRY glDepthFunc (GLenum func) EGLBODYV;
+GL_APICALL void GL_APIENTRY glDepthMask (GLboolean flag) EGLBODYV;
+GL_APICALL void GL_APIENTRY glDepthRangef (GLfloat n, GLfloat f) EGLBODYV;
+GL_APICALL void GL_APIENTRY glDetachShader (GLuint program, GLuint shader) EGLBODYV;
+GL_APICALL void GL_APIENTRY glDisable (GLenum cap) EGLBODYV;
+GL_APICALL void GL_APIENTRY glDisableVertexAttribArray (GLuint index) EGLBODYV;
+GL_APICALL void GL_APIENTRY glDrawArrays (GLenum mode, GLint first, GLsizei count) EGLBODYV;
+GL_APICALL void GL_APIENTRY glDrawElements (GLenum mode, GLsizei count, GLenum type, const void *indices) EGLBODYV;
+GL_APICALL void GL_APIENTRY glEnable (GLenum cap) EGLBODYV;
+GL_APICALL void GL_APIENTRY glEnableVertexAttribArray (GLuint index) EGLBODYV;
+GL_APICALL void GL_APIENTRY glFinish (void) EGLBODYV;
+GL_APICALL void GL_APIENTRY glFlush (void) EGLBODYV;
+GL_APICALL void GL_APIENTRY glFramebufferRenderbuffer (GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer) EGLBODYV;
+GL_APICALL void GL_APIENTRY glFramebufferTexture2D (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level) EGLBODYV;
+GL_APICALL void GL_APIENTRY glFrontFace (GLenum mode) EGLBODYV;
+GL_APICALL void GL_APIENTRY glGenBuffers (GLsizei n, GLuint *buffers) EGLBODYV;
+GL_APICALL void GL_APIENTRY glGenerateMipmap (GLenum target) EGLBODYV;
+GL_APICALL void GL_APIENTRY glGenFramebuffers (GLsizei n, GLuint *framebuffers) EGLBODYV;
+GL_APICALL void GL_APIENTRY glGenRenderbuffers (GLsizei n, GLuint *renderbuffers) EGLBODYV;
+GL_APICALL void GL_APIENTRY glGenTextures (GLsizei n, GLuint *textures) EGLBODYV;
+GL_APICALL void GL_APIENTRY glGetActiveAttrib (GLuint program, GLuint index, GLsizei bufSize, GLsizei *length, GLint *size, GLenum *type, GLchar *name) EGLBODYV;
+GL_APICALL void GL_APIENTRY glGetActiveUniform (GLuint program, GLuint index, GLsizei bufSize, GLsizei *length, GLint *size, GLenum *type, GLchar *name) EGLBODYV;
+GL_APICALL void GL_APIENTRY glGetAttachedShaders (GLuint program, GLsizei maxCount, GLsizei *count, GLuint *shaders) EGLBODYV;
+GL_APICALL GLint GL_APIENTRY glGetAttribLocation (GLuint program, const GLchar *name) EGLBODY0;
+GL_APICALL void GL_APIENTRY glGetBooleanv (GLenum pname, GLboolean *data) EGLBODYV;
+GL_APICALL void GL_APIENTRY glGetBufferParameteriv (GLenum target, GLenum pname, GLint *params) EGLBODYV;
+GL_APICALL GLenum GL_APIENTRY glGetError (void) EGLBODY0;
+GL_APICALL void GL_APIENTRY glGetFloatv (GLenum pname, GLfloat *data) EGLBODYV;
+GL_APICALL void GL_APIENTRY glGetFramebufferAttachmentParameteriv (GLenum target, GLenum attachment, GLenum pname, GLint *params) EGLBODYV;
+GL_APICALL void GL_APIENTRY glGetIntegerv (GLenum pname, GLint *data) EGLBODYV;
+GL_APICALL void GL_APIENTRY glGetProgramiv (GLuint program, GLenum pname, GLint *params) EGLBODYV;
+GL_APICALL void GL_APIENTRY glGetProgramInfoLog (GLuint program, GLsizei bufSize, GLsizei *length, GLchar *infoLog) EGLBODYV;
+GL_APICALL void GL_APIENTRY glGetRenderbufferParameteriv (GLenum target, GLenum pname, GLint *params) EGLBODYV;
+GL_APICALL void GL_APIENTRY glGetShaderiv (GLuint shader, GLenum pname, GLint *params) EGLBODYV;
+GL_APICALL void GL_APIENTRY glGetShaderInfoLog (GLuint shader, GLsizei bufSize, GLsizei *length, GLchar *infoLog) EGLBODYV;
+GL_APICALL void GL_APIENTRY glGetShaderPrecisionFormat (GLenum shadertype, GLenum precisiontype, GLint *range, GLint *precision) EGLBODYV;
+GL_APICALL void GL_APIENTRY glGetShaderSource (GLuint shader, GLsizei bufSize, GLsizei *length, GLchar *source) EGLBODYV;
+GL_APICALL const GLubyte *GL_APIENTRY glGetString (GLenum name) EGLBODY0;
+GL_APICALL void GL_APIENTRY glGetTexParameterfv (GLenum target, GLenum pname, GLfloat *params) EGLBODYV;
+GL_APICALL void GL_APIENTRY glGetTexParameteriv (GLenum target, GLenum pname, GLint *params) EGLBODYV;
+GL_APICALL void GL_APIENTRY glGetUniformfv (GLuint program, GLint location, GLfloat *params) EGLBODYV;
+GL_APICALL void GL_APIENTRY glGetUniformiv (GLuint program, GLint location, GLint *params) EGLBODYV;
+GL_APICALL GLint GL_APIENTRY glGetUniformLocation (GLuint program, const GLchar *name) EGLBODY0;
+GL_APICALL void GL_APIENTRY glGetVertexAttribfv (GLuint index, GLenum pname, GLfloat *params) EGLBODYV;
+GL_APICALL void GL_APIENTRY glGetVertexAttribiv (GLuint index, GLenum pname, GLint *params) EGLBODYV;
+GL_APICALL void GL_APIENTRY glGetVertexAttribPointerv (GLuint index, GLenum pname, void **pointer) EGLBODYV;
+GL_APICALL void GL_APIENTRY glHint (GLenum target, GLenum mode) EGLBODYV;
+GL_APICALL GLboolean GL_APIENTRY glIsBuffer (GLuint buffer) EGLBODY0;
+GL_APICALL GLboolean GL_APIENTRY glIsEnabled (GLenum cap) EGLBODY0;
+GL_APICALL GLboolean GL_APIENTRY glIsFramebuffer (GLuint framebuffer) EGLBODY0;
+GL_APICALL GLboolean GL_APIENTRY glIsProgram (GLuint program) EGLBODY0;
+GL_APICALL GLboolean GL_APIENTRY glIsRenderbuffer (GLuint renderbuffer) EGLBODY0;
+GL_APICALL GLboolean GL_APIENTRY glIsShader (GLuint shader) EGLBODY0;
+GL_APICALL GLboolean GL_APIENTRY glIsTexture (GLuint texture) EGLBODY0;
+GL_APICALL void GL_APIENTRY glLineWidth (GLfloat width) EGLBODYV;
+GL_APICALL void GL_APIENTRY glLinkProgram (GLuint program) EGLBODYV;
+GL_APICALL void GL_APIENTRY glPixelStorei (GLenum pname, GLint param) EGLBODYV;
+GL_APICALL void GL_APIENTRY glPolygonOffset (GLfloat factor, GLfloat units) EGLBODYV;
+GL_APICALL void GL_APIENTRY glReadPixels (GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, void *pixels) EGLBODYV;
+GL_APICALL void GL_APIENTRY glReleaseShaderCompiler (void) EGLBODYV;
+GL_APICALL void GL_APIENTRY glRenderbufferStorage (GLenum target, GLenum internalformat, GLsizei width, GLsizei height) EGLBODYV;
+GL_APICALL void GL_APIENTRY glSampleCoverage (GLfloat value, GLboolean invert) EGLBODYV;
+GL_APICALL void GL_APIENTRY glScissor (GLint x, GLint y, GLsizei width, GLsizei height) EGLBODYV;
+GL_APICALL void GL_APIENTRY glShaderBinary (GLsizei count, const GLuint *shaders, GLenum binaryformat, const void *binary, GLsizei length) EGLBODYV;
+GL_APICALL void GL_APIENTRY glShaderSource (GLuint shader, GLsizei count, const GLchar *const*string, const GLint *length) EGLBODYV;
+GL_APICALL void GL_APIENTRY glStencilFunc (GLenum func, GLint ref, GLuint mask) EGLBODYV;
+GL_APICALL void GL_APIENTRY glStencilFuncSeparate (GLenum face, GLenum func, GLint ref, GLuint mask) EGLBODYV;
+GL_APICALL void GL_APIENTRY glStencilMask (GLuint mask) EGLBODYV;
+GL_APICALL void GL_APIENTRY glStencilMaskSeparate (GLenum face, GLuint mask) EGLBODYV;
+GL_APICALL void GL_APIENTRY glStencilOp (GLenum fail, GLenum zfail, GLenum zpass) EGLBODYV;
+GL_APICALL void GL_APIENTRY glStencilOpSeparate (GLenum face, GLenum sfail, GLenum dpfail, GLenum dppass) EGLBODYV;
+GL_APICALL void GL_APIENTRY glTexImage2D (GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void *pixels) EGLBODYV;
+GL_APICALL void GL_APIENTRY glTexParameterf (GLenum target, GLenum pname, GLfloat param) EGLBODYV;
+GL_APICALL void GL_APIENTRY glTexParameterfv (GLenum target, GLenum pname, const GLfloat *params) EGLBODYV;
+GL_APICALL void GL_APIENTRY glTexParameteri (GLenum target, GLenum pname, GLint param) EGLBODYV;
+GL_APICALL void GL_APIENTRY glTexParameteriv (GLenum target, GLenum pname, const GLint *params) EGLBODYV;
+GL_APICALL void GL_APIENTRY glTexSubImage2D (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const void *pixels) EGLBODYV;
+GL_APICALL void GL_APIENTRY glUniform1f (GLint location, GLfloat v0) EGLBODYV;
+GL_APICALL void GL_APIENTRY glUniform1fv (GLint location, GLsizei count, const GLfloat *value) EGLBODYV;
+GL_APICALL void GL_APIENTRY glUniform1i (GLint location, GLint v0) EGLBODYV;
+GL_APICALL void GL_APIENTRY glUniform1iv (GLint location, GLsizei count, const GLint *value) EGLBODYV;
+GL_APICALL void GL_APIENTRY glUniform2f (GLint location, GLfloat v0, GLfloat v1) EGLBODYV;
+GL_APICALL void GL_APIENTRY glUniform2fv (GLint location, GLsizei count, const GLfloat *value) EGLBODYV;
+GL_APICALL void GL_APIENTRY glUniform2i (GLint location, GLint v0, GLint v1) EGLBODYV;
+GL_APICALL void GL_APIENTRY glUniform2iv (GLint location, GLsizei count, const GLint *value) EGLBODYV;
+GL_APICALL void GL_APIENTRY glUniform3f (GLint location, GLfloat v0, GLfloat v1, GLfloat v2) EGLBODYV;
+GL_APICALL void GL_APIENTRY glUniform3fv (GLint location, GLsizei count, const GLfloat *value) EGLBODYV;
+GL_APICALL void GL_APIENTRY glUniform3i (GLint location, GLint v0, GLint v1, GLint v2) EGLBODYV;
+GL_APICALL void GL_APIENTRY glUniform3iv (GLint location, GLsizei count, const GLint *value) EGLBODYV;
+GL_APICALL void GL_APIENTRY glUniform4f (GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3) EGLBODYV;
+GL_APICALL void GL_APIENTRY glUniform4fv (GLint location, GLsizei count, const GLfloat *value) EGLBODYV;
+GL_APICALL void GL_APIENTRY glUniform4i (GLint location, GLint v0, GLint v1, GLint v2, GLint v3) EGLBODYV;
+GL_APICALL void GL_APIENTRY glUniform4iv (GLint location, GLsizei count, const GLint *value) EGLBODYV;
+GL_APICALL void GL_APIENTRY glUniformMatrix2fv (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value) EGLBODYV;
+GL_APICALL void GL_APIENTRY glUniformMatrix3fv (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value) EGLBODYV;
+GL_APICALL void GL_APIENTRY glUniformMatrix4fv (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value) EGLBODYV;
+GL_APICALL void GL_APIENTRY glUseProgram (GLuint program) EGLBODYV;
+GL_APICALL void GL_APIENTRY glValidateProgram (GLuint program) EGLBODYV;
+GL_APICALL void GL_APIENTRY glVertexAttrib1f (GLuint index, GLfloat x) EGLBODYV;
+GL_APICALL void GL_APIENTRY glVertexAttrib1fv (GLuint index, const GLfloat *v) EGLBODYV;
+GL_APICALL void GL_APIENTRY glVertexAttrib2f (GLuint index, GLfloat x, GLfloat y) EGLBODYV;
+GL_APICALL void GL_APIENTRY glVertexAttrib2fv (GLuint index, const GLfloat *v) EGLBODYV;
+GL_APICALL void GL_APIENTRY glVertexAttrib3f (GLuint index, GLfloat x, GLfloat y, GLfloat z) EGLBODYV;
+GL_APICALL void GL_APIENTRY glVertexAttrib3fv (GLuint index, const GLfloat *v) EGLBODYV;
+GL_APICALL void GL_APIENTRY glVertexAttrib4f (GLuint index, GLfloat x, GLfloat y, GLfloat z, GLfloat w) EGLBODYV;
+GL_APICALL void GL_APIENTRY glVertexAttrib4fv (GLuint index, const GLfloat *v) EGLBODYV;
+GL_APICALL void GL_APIENTRY glVertexAttribPointer (GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void *pointer) EGLBODYV;
+GL_APICALL void GL_APIENTRY glViewport (GLint x, GLint y, GLsizei width, GLsizei height) EGLBODYV;
+
+}
