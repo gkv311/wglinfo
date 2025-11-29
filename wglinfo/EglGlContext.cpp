@@ -378,7 +378,9 @@ bool EglGlContext::CreateGlContext(ContextBits theBits)
   {
     EGLint aCtxAttribs[] =
     {
-      EGL_CONTEXT_CLIENT_VERSION, hasGLES3 ? 3 : 2, EGL_NONE, EGL_NONE
+      EGL_CONTEXT_CLIENT_VERSION, hasGLES3 ? 3 : 2,
+      0x33AC, EGL_TRUE,
+      EGL_NONE, EGL_NONE
     };
 
     myEglContext = eglCreateContext(myEglDisp, anEglCfg, EGL_NO_CONTEXT, aCtxAttribs);
