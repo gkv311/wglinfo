@@ -65,6 +65,12 @@ static void createNSApp()
   //[anAppNs run]; // Cocoa event loop
 }
 
+std::string CocoaWindow::GetOsVersion()
+{
+  NSString* aStr = [[NSProcessInfo processInfo] operatingSystemVersionString];
+  return aStr != nullptr ? [aStr UTF8String] : "";
+}
+
 CocoaWindow::CocoaWindow(const std::string& theTitle)
 : myTitle(theTitle)
 {

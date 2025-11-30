@@ -483,6 +483,8 @@ void WglInfo::printSystemInfo()
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
+#elif defined(__APPLE__)
+  std::cout << " running on macOS " << CocoaWindow::GetOsVersion();
 #endif
 
   std::cout << "\n\n";

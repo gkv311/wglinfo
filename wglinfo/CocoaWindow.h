@@ -32,6 +32,11 @@ public:
   //! Close window.
   virtual void Destroy() override { destroyWindow(); }
 
+public:
+
+  //! Return OS version string.
+  static std::string GetOsVersion();
+
 protected:
 
   //! Close window.
