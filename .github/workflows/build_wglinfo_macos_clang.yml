@@ -4,8 +4,8 @@ name: Build (macOS/Clang)
 on: [push]
 
 jobs:
-  build-macos:
-    runs-on: macos-13
+  build-macos-arm64:
+    runs-on: macos-15
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4.1.7
@@ -25,10 +25,39 @@ jobs:
     - name: Run wglinfo
       run: |
         ./install/wglinfo
-        ./install/wglinfo > ./install/wglinfo.log
+        ./install/wglinfo 2>&1 > ./install/wglinfo.log
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: wglinfo-macos
+        name: wglinfo-macos-arm64
+        path: install
+
+  build-macos-intel:
+    runs-on: macos-15-intel
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4.1.7
+      with:
+        fetch-depth: 0
+
+    - name: Configure wglinfo
+      run: |
+        mkdir "build"
+        cmake -G Ninja -D BUILD_TREAT_WARNINGS_AS_ERRORS=ON -S . -B "./build" -D CMAKE_INSTALL_PREFIX="install"
+
+    - name: Build wglinfo
+      run: |
+        cmake --build "./build" --config Release
+        cmake --build "./build" --config Release --target install
+
+    - name: Run wglinfo
+      run: |
+        ./install/wglinfo
+        ./install/wglinfo 2>&1 > ./install/wglinfo.log
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: wglinfo-macos-intel
         path: install
