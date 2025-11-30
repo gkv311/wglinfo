@@ -7,8 +7,17 @@
 
 #include <string>
 
-#ifdef _WIN32
+#if defined(_WIN32)
 typedef void* NativeDrawable; // HWND under WNT
+#elif defined(__APPLE__)
+#ifdef __OBJC__
+@class NSView;
+@class NSWindow;
+#else
+struct NSView;
+struct NSWindow;
+#endif
+typedef NSView* NativeDrawable; // NSView* under macOS
 #else
 typedef unsigned long NativeDrawable; // Window or Pixmap under UNIX
 #endif

@@ -8,6 +8,8 @@
 #ifdef _WIN32
   #include <windows.h>
   #define EGLAPIENTRY WINAPI
+#elif defined(__APPLE__)
+  #define EGLAPIENTRY
 #else
   #include <EGL/egl.h>
 #endif
@@ -70,7 +72,7 @@ private:
   //! Release resources.
   void release();
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__APPLE__)
   // some declarations from EGL.h
   #define EGL_NO_CONTEXT ((EGLContext)0)
   #define EGL_NO_DISPLAY ((EGLDisplay)0)
@@ -84,9 +86,16 @@ private:
   typedef void*   EGLContext;
   typedef void*   EGLDisplay;
   typedef void*   EGLClientBuffer;
+#if defined(_WIN32)
   typedef HDC     EGLNativeDisplayType;
   typedef HBITMAP EGLNativePixmapType;
   typedef HWND    EGLNativeWindowType;
+#else
+  typedef void* EGLNativeDisplayType;
+  typedef void* EGLNativePixmapType;
+  typedef void* EGLNativeWindowType;
+#endif
+
   typedef void(*__eglMustCastToProperFunctionPointerType)(void);
   typedef __eglMustCastToProperFunctionPointerType(EGLAPIENTRY *eglGetProcAddress_t)(const char* theProcName);
 
@@ -111,7 +120,7 @@ private:
 
 private:
 
-  HMODULE myEglDll = NULL;
+  void* myEglDll = NULL;
   eglGetError_t eglGetError = NULL;
   eglGetProcAddress_t eglGetProcAddress = NULL;
   eglGetDisplay_t eglGetDisplay = NULL;

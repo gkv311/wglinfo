@@ -4,7 +4,7 @@
 
 #include "XwWindow.h"
 
-#if !defined(_WIN32) && !defined(__EMSCRIPTEN__)
+#if !defined(_WIN32) && !defined(__APPLE__) && !defined(__EMSCRIPTEN__)
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>

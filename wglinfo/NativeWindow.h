@@ -8,6 +8,9 @@
 #ifdef _WIN32
   #include "WntWindow.h"
   typedef WntWindow NativeWindow;
+#elif defined(__APPLE__)
+  #include "CocoaWindow.h"
+  typedef CocoaWindow NativeWindow;
 #elif defined(__EMSCRIPTEN__)
   #include "WasmWindow.h"
   typedef WasmWindow NativeWindow;

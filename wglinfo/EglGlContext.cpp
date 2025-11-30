@@ -15,7 +15,7 @@
   #endif
 #endif
 
-#ifdef _WIN32
+#if !defined(EGL_TRUE)
 #define EGL_TRUE                          1
 #define EGL_ALPHA_SIZE                    0x3021
 #define EGL_BAD_ACCESS                    0x3002
@@ -140,7 +140,7 @@
 template<typename FuncType_t> bool EglGlContext::findEglDllProc(const char* theFuncName, FuncType_t& theFuncPtr)
 {
 #ifdef _WIN32
-  theFuncPtr = (FuncType_t)(void*)GetProcAddress(myEglDll, theFuncName);
+  theFuncPtr = (FuncType_t)(void*)GetProcAddress((HMODULE)myEglDll, theFuncName);
 #else
   theFuncPtr = NULL;
 #endif
@@ -165,7 +165,7 @@ EglGlContext::EglGlContext(const std::string& theTitle)
 
 bool EglGlContext::LoadEglLibrary(bool theIsMandatory)
 {
-#ifdef _WIN32
+#if defined(_WIN32)
   if (myEglDll != NULL)
     return true;
 
@@ -203,6 +203,9 @@ bool EglGlContext::LoadEglLibrary(bool theIsMandatory)
     return false;
   }
   return true;
+#elif defined(__APPLE__)
+  (void)theIsMandatory;
+  return false;
 #else
   (void)theIsMandatory;
   return true;

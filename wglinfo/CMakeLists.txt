@@ -59,6 +59,10 @@ set (USED_SRCFILES
   "BaseGlContext.h"
   "BaseGlContext.cpp"
   "BaseWindow.h"
+  "CocoaWindow.h"
+  "CocoaWindow.mm"
+  "CglContext.h"
+  "CglContext.mm"
   "EglGlContext.h"
   "EglGlContext.cpp"
   "GlxContext.h"
@@ -83,6 +87,11 @@ if (WIN32)
   set (USED_RCFILE   "wglinfo.rc")
   set (USED_MANFILES "wglinfo.manifest")
 endif()
+if (NOT APPLE)
+  foreach (aFileIter "CglContext.mm" "CocoaWindow.mm")
+    set_source_files_properties (${aFileIter} PROPERTIES HEADER_FILE_ONLY TRUE)
+  endforeach()
+endif()
 
 # main project target
 add_executable (${PROJECT_NAME}
@@ -92,6 +101,8 @@ add_executable (${PROJECT_NAME}
 target_link_libraries (${PROJECT_NAME} PRIVATE ${OPENGL_LIBRARIES})
 if (WIN32)
   target_link_libraries (${PROJECT_NAME} PRIVATE gdi32 user32)
+elseif (APPLE)
+  target_link_libraries (${PROJECT_NAME} PRIVATE "-framework CoreGraphics" "-framework Appkit" objc)
 elseif (EMSCRIPTEN)
   #
 elseif (UNIX)

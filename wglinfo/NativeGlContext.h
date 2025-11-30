@@ -8,6 +8,9 @@
 #ifdef _WIN32
   #include "WglContext.h"
   typedef WglContext NativeGlContext;
+#elif defined(__APPLE__)
+  #include "CglContext.h"
+  typedef CglContext NativeGlContext;
 #elif defined(__EMSCRIPTEN__)
   #include "WasmContext.h"
   typedef WasmContext NativeGlContext;

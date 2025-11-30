@@ -4,7 +4,7 @@
 
 #include "GlxContext.h"
 
-#if !defined(_WIN32) && !defined(__EMSCRIPTEN__)
+#if !defined(_WIN32) && !defined(__APPLE__) && !defined(__EMSCRIPTEN__)
 
 #include <GL/gl.h>
 #include <GL/glx.h>

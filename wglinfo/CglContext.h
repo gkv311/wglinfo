@@ -2,25 +2,31 @@
 //
 // This code is licensed under MIT license (see LICENSE.txt for details).
 
-#ifndef GLXCONTEXT_HEADER
-#define GLXCONTEXT_HEADER
-#if !defined(_WIN32) && !defined(__APPLE__) && !defined(__EMSCRIPTEN__)
+#ifndef CGLCONTEXT_HEADER
+#define CGLCONTEXT_HEADER
+#if defined(__APPLE__)
 
 #include "BaseGlContext.h"
 
-//! GLX context (Xlib).
-class GlxContext : public BaseGlContext
+#ifdef __OBJC__
+@class NSOpenGLContext;
+#else
+struct NSOpenGLContext;
+#endif
+
+//! CGL (Core OpenGL) context for macOS.
+class CglContext : public BaseGlContext
 {
 public:
 
   //! Empty constructor.
-  GlxContext(const std::string& theTitle);
+  CglContext(const std::string& theTitle);
 
   //! Destructor.
-  ~GlxContext() { release(); }
+  ~CglContext() { release(); }
 
-  //! Return platform (GLX).
-  virtual const char* PlatformName() const override { return "GLX"; }
+  //! Return platform (CGL).
+  virtual const char* PlatformName() const override { return "CGL"; }
 
   //! Release resources.
   virtual void Release() override { release(); }
@@ -33,7 +39,7 @@ public:
 
 public:
 
-  //! Print GLX platform info.
+  //! Print platform info.
   virtual void PrintPlatformInfo(bool theToPrintExtensions) override;
 
   //! Print GPU memory info.
@@ -66,14 +72,16 @@ private:
 
 private:
 
-  typedef void* NativeRenderingContext; // GLXContext under UNIX
+  typedef NSOpenGLContext* NativeRenderingContext;
 
 private:
 
-  XwWindow myWin;
-  NativeRenderingContext myRendCtx = 0; //!< GLXContext rendering context
+  void* myGlLibHandle = nullptr;
+
+  CocoaWindow myWin;
+  NativeRenderingContext myRendCtx = 0;
 
 };
 
 #endif
-#endif // NATIVEGLCONTEXT_HEADER
+#endif // CGLCONTEXT_HEADER
