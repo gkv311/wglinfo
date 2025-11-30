@@ -199,6 +199,8 @@ bool WglInfo::parseArguments(int theNbArgs, const char** theArgVec)
         }
       #ifdef _WIN32
         else if (aVal == "wgl" || aVal == "native")
+      #elif defined(__APPLE__)
+        else if (aVal == "cgl" || aVal == "native")
       #else
         else if (aVal == "glx" || aVal == "native")
       #endif
@@ -225,6 +227,8 @@ bool WglInfo::parseArguments(int theNbArgs, const char** theArgVec)
     }
   #ifdef _WIN32
     else if (anArg == "wgl" || anArg == "native")
+  #elif defined(__APPLE__)
+    else if (anArg == "cgl" || anArg == "native")
   #else
     else if (anArg == "glx" || anArg == "native")
   #endif
@@ -331,7 +335,7 @@ void WglInfo::printHelp(const char* theName)
     "  -B             Brief output, print only the basics.\n"
     "  -v             Print visuals info in verbose form.\n"
     "  -h             This information.\n"
-    "  --platform     Platform (EGL|WGL) to create context;\n"
+    "  --platform     Platform (EGL|WGL|GLX|CGL) to create context;\n"
     "                 by default all available platforms will be evaluated.\n"
     "  --api          Api (OpenGL or OpenGL ES) to create context;\n"
     "                 by default all available APIs will be evaluated.\n"
@@ -339,7 +343,7 @@ void WglInfo::printHelp(const char* theName)
     "                 by default several main profiles will be evaluated.\n"
     "  --gpumemory    Print only GPU memory info (suppresses all other info).\n"
     "  --first        Print only first context.\n"
-    "  --noplatform   Do not print platform (EGL|WGL) info.\n"
+    "  --noplatform   Do not print platform (EGL|WGL|GLX|CGL) info.\n"
     "  --norenderer   Do not print renderer info.\n"
     "  --noextensions Do not list extensions.\n"
     "  --novisuals    Do not list visuals, same as -B.\n"
@@ -364,6 +368,11 @@ std::vector<BaseGlContext::ContextBits> WglInfo::printWglInfo()
 
   if (myToShowGl && myIsSoftProfile)
     anOptions.push_back(BaseGlContext::ContextBits_SoftProfile);
+
+#if defined(__APPLE__)
+  if (myToShowGl && myIsSoftProfile && myIsCoreProfile)
+    anOptions.push_back(BaseGlContext::ContextBits(BaseGlContext::ContextBits_CoreProfile | BaseGlContext::ContextBits_SoftProfile));
+#endif
 
   std::vector<BaseGlContext::ContextBits> aSucceeded;
   for (size_t anOptIter = 0; anOptIter < anOptions.size(); ++anOptIter)

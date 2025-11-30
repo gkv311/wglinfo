@@ -38,7 +38,7 @@ public:
     if ((myCtxBits & ContextBits_GLES) != 0)
       return "";
     else if ((myCtxBits & ContextBits_CoreProfile) != 0)
-      return " (core profile)";
+      return (myCtxBits & ContextBits_SoftProfile) != 0 ? " (software, core profile)" : " (core profile)";
     else if ((myCtxBits & ContextBits_ForwardProfile) != 0)
       return " (forward profile)";
     else if ((myCtxBits & ContextBits_SoftProfile) != 0)
@@ -47,7 +47,7 @@ public:
     return "";
   }
 
-  //! Return platform (EGL, WGL, GLX, etc.).
+  //! Return platform (EGL, WGL, GLX, CGL, etc.).
   virtual const char* PlatformName() const = 0;
 
   //! Create a GL context.
