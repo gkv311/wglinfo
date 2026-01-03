@@ -43,7 +43,7 @@ if (MSVC)
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3")
   endif()
   if (BUILD_TREAT_WARNINGS_AS_ERRORS)
-    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /WX")    
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /WX")
   endif()
 elseif (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
@@ -76,6 +76,8 @@ set (USED_SRCFILES
   "WasmContext.cpp"
   "WasmWindow.h"
   "WasmWindow.cpp"
+  "WlWindow.h"
+  "WlWindow.cpp"
   "WntWindow.h"
   "WntWindow.cpp"
   "WglContext.h"
@@ -98,11 +100,58 @@ else()
   endforeach()
 endif()
 
+if (WIN32 OR APPLE OR EMSCRIPTEN)
+  set (USE_WAYLAND OFF)
+else()
+  set (USE_WAYLAND ON CACHE BOOL "Use Wayland protocol")
+endif()
+
+# Find Wayland configuration.
+if (USE_WAYLAND)
+  add_definitions (-DHAVE_WAYLAND)
+  include (FindPkgConfig)
+  pkg_check_modules (WAYLAND REQUIRED IMPORTED_TARGET
+                     wayland-client>=0.2.7 wayland-cursor>=0.2.7 wayland-egl>=0.2.7 xkbcommon>=0.5.0 wayland-protocols wayland-scanner)
+  pkg_get_variable (WAYLAND_PROTOCOLS_DATADIR wayland-protocols pkgdatadir)
+  pkg_get_variable (WAYLAND_SCANNER wayland-scanner wayland_scanner)
+  message (STATUS "WAYLAND_LINK_LIBRARIES=${WAYLAND_LINK_LIBRARIES}")
+  message (STATUS "WAYLAND_PROTOCOLS_DATADIR=${WAYLAND_PROTOCOLS_DATADIR}")
+  message (STATUS "WAYLAND_SCANNER=${WAYLAND_SCANNER}")
+endif()
+
+# Generate C++ wayland protocols from XML definition using wayland-scanner.
+set (WAYLAND_GEN_DIR "${CMAKE_BINARY_DIR}/WaylandProtocols")
+macro (generate_wayland_protocol theStage theProtocol)
+  set (aProtXml    "${WAYLAND_PROTOCOLS_DATADIR}/${theStage}/${theProtocol}/${theProtocol}.xml")
+  set (aProtHppTmp "${WAYLAND_GEN_DIR}/${theProtocol}-client-protocol.h.tmp")
+  set (aProtCppTmp "${WAYLAND_GEN_DIR}/${theProtocol}-client-protocol.c.tmp")
+  set (aProtHpp    "${WAYLAND_GEN_DIR}/${theProtocol}-client-protocol.h")
+  set (aProtCpp    "${WAYLAND_GEN_DIR}/${theProtocol}-client-protocol.c")
+
+  file (MAKE_DIRECTORY "${WAYLAND_GEN_DIR}")
+  execute_process (COMMAND "${WAYLAND_SCANNER}" client-header "${aProtXml}" "${aProtHppTmp}"
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+  )
+  execute_process (COMMAND "${WAYLAND_SCANNER}" private-code  "${aProtXml}" "${aProtCppTmp}"
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+  )
+  configure_file ("${aProtHppTmp}" "${aProtHpp}" COPYONLY)
+  configure_file ("${aProtCppTmp}" "${aProtCpp}" COPYONLY)
+
+  target_sources (${PROJECT_NAME} PRIVATE ${aProtHpp} ${aProtCpp})
+  target_include_directories (${PROJECT_NAME} PRIVATE ${WAYLAND_GEN_DIR})
+endmacro()
+
 # main project target
 add_executable (${PROJECT_NAME}
   ${USED_SRCFILES} ${USED_RCFILE} ${USED_MANFILES}
   ../README.md ../LICENSE.txt
 )
+if (USE_WAYLAND)
+  generate_wayland_protocol (stable xdg-shell)
+  target_link_libraries (${PROJECT_NAME} PRIVATE ${WAYLAND_LINK_LIBRARIES})
+endif()
+
 target_link_libraries (${PROJECT_NAME} PRIVATE ${OPENGL_LIBRARIES})
 if (WIN32)
   target_link_libraries (${PROJECT_NAME} PRIVATE gdi32 user32)

@@ -219,7 +219,6 @@ void EglGlContext::release()
     eglDestroySurface(myEglDisp, myEglSurf);
     myEglSurf = EGL_NO_SURFACE;
   }
-  myWin.Destroy();
 
   if (myEglContext != EGL_NO_CONTEXT)
   {
@@ -237,6 +236,7 @@ void EglGlContext::release()
 
     myEglDisp = EGL_NO_DISPLAY;
   }
+  myWin.Destroy();
 }
 
 unsigned int EglGlContext::GlGetError()

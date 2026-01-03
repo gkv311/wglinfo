@@ -7,6 +7,7 @@
 #if !defined(_WIN32) && !defined(__APPLE__) && !defined(__EMSCRIPTEN__)
 
 #include "BaseGlContext.h"
+#include "XwWindow.h"
 
 //! GLX context (Xlib).
 class GlxContext : public BaseGlContext
