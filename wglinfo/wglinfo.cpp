@@ -53,8 +53,9 @@ private:
   static void printSystemInfo();
 
 private:
+  bool myToShowNgl = true;
   bool myToShowEgl = true;
-  bool myToShowWgl = true;
+  std::shared_ptr<BaseWindow> myEglWin;
 
   bool myToShowGl = true;
   bool myToShowGles = true;
@@ -92,11 +93,24 @@ int WglInfo::Perform(int theNbArgs, const char** theArgVec)
     return myExitCode;
 
   const std::vector<BaseGlContext::ContextBits> aWglDone =
-    myToShowWgl ? printWglInfo<NativeGlContext>() : std::vector<BaseGlContext::ContextBits>();
+    myToShowNgl ? printWglInfo<NativeGlContext>() : std::vector<BaseGlContext::ContextBits>();
 
   std::vector<BaseGlContext::ContextBits> aEglDone;
   if (myToShowEgl && (!myIsFirstOnly || aWglDone.empty()))
-    aEglDone = printWglInfo<EglGlContext>();
+  {
+    // probably XDG_SESSION_TYPE=wayland should be respected here
+    // instead of trying to connect to Wayland server via WlWindow::HasServer()...
+  #ifdef HAVE_WAYLAND
+    if (dynamic_cast<XwWindow*>(myEglWin.get()) != nullptr)
+      aEglDone = printWglInfo<EglGlContextT<XwWindow>>();
+    else if (dynamic_cast<WlWindow*>(myEglWin.get()) != nullptr || WlWindow::HasServer())
+      aEglDone = printWglInfo<EglGlContextT<WlWindow>>();
+    else
+      aEglDone = printWglInfo<EglGlContextT<XwWindow>>();
+  #else
+    aEglDone = printWglInfo<EglGlContextT<NativeWindow>>();
+  #endif
+  }
 
   if (aWglDone.empty() && aEglDone.empty())
     myExitCode = 1;
@@ -111,7 +125,23 @@ int WglInfo::Perform(int theNbArgs, const char** theArgVec)
     }
     if (!aEglDone.empty())
     {
-      EglGlContext aDummy("wglinfo_dummy");
+      std::shared_ptr<BaseWindow> anEglWin;
+      if (myEglWin.get() != nullptr)
+      {
+        anEglWin = myEglWin->EmptyCopy("wglinfo_dummy");
+      }
+      else
+      {
+      #ifdef HAVE_WAYLAND
+        if (anEglWin.get() == nullptr && WlWindow::HasServer())
+          anEglWin.reset(new WlWindow("wglinfo_dummy"));
+        else
+          anEglWin.reset(new XwWindow("wglinfo_dummy"));
+      #else
+        anEglWin.reset(new NativeWindow("wglinfo_dummy"));
+      #endif
+      }
+      EglGlContext aDummy(anEglWin);
       if (aDummy.CreateGlContext(aEglDone[0]))
         aDummy.PrintVisuals(myIsVerbose);
     }
@@ -185,14 +215,28 @@ bool WglInfo::parseArguments(int theNbArgs, const char** theArgVec)
     }
     else if (anArg == "--platform" || anArg == "-platform")
     {
-      myToShowWgl = myToShowEgl = false;
+      myToShowNgl = myToShowEgl = false;
       if (anArgIter + 1 < theNbArgs)
       {
         const std::string aVal = stringToLowerCase(theArgVec[++anArgIter]);
         if (aVal == "*")
         {
-          myToShowWgl = myToShowEgl = true;
+          myToShowNgl = myToShowEgl = true;
         }
+      #if defined(HAVE_WAYLAND)
+        else if (aVal == "egl-wayland" || aVal == "egl-wl")
+        {
+          myToShowEgl = true;
+          myEglWin.reset(new WlWindow(""));
+        }
+      #endif
+      #if !defined(_WIN32) && !defined(__APPLE__) && !defined(__EMSCRIPTEN__)
+        else if (aVal == "egl-x11")
+        {
+          myToShowEgl = true;
+          myEglWin.reset(new XwWindow(""));
+        }
+      #endif
         else if (aVal == "egl")
         {
           myToShowEgl = true;
@@ -201,29 +245,31 @@ bool WglInfo::parseArguments(int theNbArgs, const char** theArgVec)
         else if (aVal == "wgl" || aVal == "native")
       #elif defined(__APPLE__)
         else if (aVal == "cgl" || aVal == "native")
+      #elif defined(__EMSCRIPTEN__)
+        else if (aVal == "emsdk" || aVal == "native")
       #else
         else if (aVal == "glx" || aVal == "native")
       #endif
         {
-          myToShowWgl = true;
+          myToShowNgl = true;
         }
         else
         {
           --anArgIter;
-          myToShowWgl = myToShowEgl = true;
+          myToShowNgl = myToShowEgl = true;
           suppressInfoBut(myToPrintPlatform);
         }
       }
       else
       {
-        myToShowWgl = myToShowEgl = true;
+        myToShowNgl = myToShowEgl = true;
         suppressInfoBut(myToPrintPlatform);
       }
     }
     else if (anArg == "egl")
     {
       myToShowEgl = true;
-      myToShowWgl = false;
+      myToShowNgl = false;
     }
   #ifdef _WIN32
     else if (anArg == "wgl" || anArg == "native")
@@ -234,7 +280,7 @@ bool WglInfo::parseArguments(int theNbArgs, const char** theArgVec)
   #endif
     {
       myToShowEgl = false;
-      myToShowWgl = true;
+      myToShowNgl = true;
     }
     else if ((anArg == "--api" || anArg == "-api")
            && anArgIter + 1 < theNbArgs)
@@ -329,21 +375,36 @@ void WglInfo::printHelp(const char* theName)
   {
     aName = aName.substr(0, aName.size() - 4);
   }
-  std::cout << "Usage: " << aName << " [-v] [-h] [--platform {egl|wgl}]=* [--api {gl|gles}]=*\n"
-    "               [--profile {core|compat|soft}]=* [--gpumemory] [--first]\n"
+
+  static const char aPlatforms[] =
+#ifdef _WIN32
+    "EGL|WGL";
+#elif defined(__APPLE__)
+    "EGL|CGL";
+#elif defined(__EMSCRIPTEN__)
+    "EGL|EMSDK";
+#elif defined(HAVE_WAYLAND)
+    "EGL|EGL-X11|EGL-WAYLAND|GLX";
+#else
+    "EGL|GLX";
+#endif
+
+  std::cout << "Usage: " << aName << " [-v] [-h] [--platform {" << aPlatforms << "}]=*\n"
+    "               [--api {GL|GLES}]=* [--profile {core|compat|soft}]=*\n"
+    "               [--first] [--gpumemory]\n"
     "               [--novisuals] [--noextensions] [--norenderer] [--noplatform]\n"
     "  -B             Brief output, print only the basics.\n"
     "  -v             Print visuals info in verbose form.\n"
     "  -h             This information.\n"
-    "  --platform     Platform (EGL|WGL|GLX|CGL) to create context;\n"
-    "                 by default all available platforms will be evaluated.\n"
+    "  --platform     Platform (" << aPlatforms << ") to create context;\n"
+    "                 by default main platforms will be evaluated.\n"
     "  --api          Api (OpenGL or OpenGL ES) to create context;\n"
     "                 by default all available APIs will be evaluated.\n"
     "  --profile      Profile to create OpenGL context;\n"
     "                 by default several main profiles will be evaluated.\n"
-    "  --gpumemory    Print only GPU memory info (suppresses all other info).\n"
     "  --first        Print only first context.\n"
-    "  --noplatform   Do not print platform (EGL|WGL|GLX|CGL) info.\n"
+    "  --gpumemory    Print only GPU memory info (suppresses all other info).\n"
+    "  --noplatform   Do not print platform (EGL|WGL|GLX|CGL etc.) info.\n"
     "  --norenderer   Do not print renderer info.\n"
     "  --noextensions Do not list extensions.\n"
     "  --novisuals    Do not list visuals, same as -B.\n"

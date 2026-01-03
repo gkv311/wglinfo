@@ -7,8 +7,6 @@
 
 #include "BaseWindow.h"
 
-#include <memory>
-
 struct wl_compositor;
 struct wl_display;
 struct wl_registry;
@@ -24,6 +22,10 @@ struct xdg_toplevel;
 //! Native Wayland window for Linux.
 class WlWindow : public BaseWindow
 {
+public:
+  //! Check if there is default Wayland server to connect to.
+  static bool HasServer();
+
 public:
   //! Empty constructor.
   WlWindow(const std::string& theTitle);
@@ -45,6 +47,12 @@ public:
 
   //! Close window.
   virtual void Destroy() override { destroyWindow(); }
+
+  //! Create instance of the same class.
+  virtual std::shared_ptr<BaseWindow> EmptyCopy(const std::string& theTitle) override
+  {
+    return std::make_shared<WlWindow>(theTitle);
+  }
 
 protected:
 

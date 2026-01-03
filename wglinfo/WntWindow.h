@@ -32,6 +32,12 @@ public:
   //! Close window.
   virtual void Destroy() override { destroyWindow(); }
 
+  //! Create instance of the same class.
+  virtual std::shared_ptr<BaseWindow> EmptyCopy(const std::string& theTitle) override
+  {
+    return std::make_shared<WntWindow>(theTitle);
+  }
+
   //! Post quit message.
   void Quit();
 

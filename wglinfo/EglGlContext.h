@@ -24,6 +24,9 @@ public:
   //! Empty constructor.
   EglGlContext(const std::string& theTitle);
 
+  //! Constructor from native window.
+  EglGlContext(const std::shared_ptr<BaseWindow>& theWin);
+
   //! Destructor.
   ~EglGlContext() { release(); }
 
@@ -31,7 +34,16 @@ public:
   bool LoadEglLibrary(bool theIsMandatory = false);
 
   //! Return platform name "EGL".
-  virtual const char* PlatformName() const override { return "EGL"; }
+  virtual const char* PlatformName() const override
+  {
+#ifdef HAVE_WAYLAND
+    return dynamic_cast<WlWindow*>(myWin.get()) != nullptr
+         ? "EGL-wayland"
+         : "EGL-x11";
+#else
+    return "EGL";
+#endif
+  }
 
   //! Release resources.
   virtual void Release() override { release(); }
@@ -153,14 +165,26 @@ private:
   glGetStringi_t glGetStringi = NULL;
   glGetIntegerv_t glGetIntegerv = NULL;
 
-private:
+protected:
 
   EGLDisplay myEglDisp = EGL_NO_DISPLAY;
   EGLContext myEglContext = EGL_NO_CONTEXT;
   EGLSurface myEglSurf = EGL_NO_SURFACE;
 
-  NativeWindow myWin;
+  std::shared_ptr<BaseWindow> myWin;
 
+};
+
+//! EGL OpenGL/GLES context creation tool.
+template<class Window_t>
+class EglGlContextT : public EglGlContext
+{
+public:
+  EglGlContextT(const std::string& theTitle)
+  : EglGlContext(std::make_shared<Window_t>(theTitle))
+  {
+    //
+  }
 };
 
 #endif // EGLGLCONTEXT_HEADER

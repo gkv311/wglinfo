@@ -158,7 +158,13 @@ void* EglGlContext::GlGetProcAddress(const char* theFuncName)
 }
 
 EglGlContext::EglGlContext(const std::string& theTitle)
-: myWin(theTitle)
+: myWin(new NativeWindow(theTitle))
+{
+  //
+}
+
+EglGlContext::EglGlContext(const std::shared_ptr<BaseWindow>& theWin)
+: myWin(theWin)
 {
   //
 }
@@ -236,7 +242,7 @@ void EglGlContext::release()
 
     myEglDisp = EGL_NO_DISPLAY;
   }
-  myWin.Destroy();
+  myWin->Destroy();
 }
 
 unsigned int EglGlContext::GlGetError()
@@ -299,7 +305,7 @@ bool EglGlContext::CreateGlContext(ContextBits theBits)
   #ifdef _WIN32
     return false;
   #else
-    EglGlContext aCtxCompat("wglinfoTmp");
+    EglGlContext aCtxCompat(myWin->EmptyCopy("wglinfoTmp"));
     if (!aCtxCompat.CreateGlContext(ContextBits_NONE)
      || !aMesaEnvSentry.Init(aCtxCompat))
     {
@@ -308,14 +314,14 @@ bool EglGlContext::CreateGlContext(ContextBits theBits)
   #endif
   }
 
-  if (!myWin.Create())
+  if (!myWin->Create())
   {
     Release();
     return false;
   }
 
-  if (myWin.GetDisplay() != 0)
-    myEglDisp = eglGetDisplay((EGLNativeDisplayType)myWin.GetDisplay());
+  if (myWin->GetDisplay() != 0)
+    myEglDisp = eglGetDisplay((EGLNativeDisplayType)myWin->GetDisplay());
   else
     myEglDisp = eglGetDisplay(EGL_DEFAULT_DISPLAY);
 
@@ -428,7 +434,7 @@ bool EglGlContext::CreateGlContext(ContextBits theBits)
     return false;
   }
 
-  myEglSurf = eglCreateWindowSurface(myEglDisp, anEglCfg, (EGLNativeWindowType)myWin.GetDrawable(), NULL);
+  myEglSurf = eglCreateWindowSurface(myEglDisp, anEglCfg, (EGLNativeWindowType)myWin->GetDrawable(), NULL);
   if (myEglSurf == EGL_NO_SURFACE)
   {
     std::cerr << "Error: EGL is unable to create surface for window!\n";
@@ -500,7 +506,7 @@ void EglGlContext::PrintVisuals(bool theIsVerbose)
     return;
   }
 
-  std::cout << "\n[EGL] " << aNbConfigs << " EGL Configs\n";
+  std::cout << "\n[" << PlatformName() << "] " << aNbConfigs << " EGL Configs\n";
   if (!theIsVerbose)
   {
     std::cout << "    visual  x  bf lv rg d st  r  g  b a  ax dp st accum buffs  ms \n"

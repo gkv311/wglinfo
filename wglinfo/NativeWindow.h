@@ -14,6 +14,9 @@
 #elif defined(__EMSCRIPTEN__)
   #include "WasmWindow.h"
   typedef WasmWindow NativeWindow;
+#elif defined(HAVE_WAYLAND)
+  #include "WlWindow.h"
+  typedef WlWindow NativeWindow;
 #else
   #include "XwWindow.h"
   typedef XwWindow NativeWindow;

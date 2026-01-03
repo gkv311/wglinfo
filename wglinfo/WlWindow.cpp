@@ -19,6 +19,13 @@
 // generated from xdg-shell.xml
 #include <xdg-shell-client-protocol.h>
 
+bool WlWindow::HasServer()
+{
+  std::shared_ptr<wl_display> aWlDisplay(wl_display_connect(nullptr),
+                                         [](wl_display* theDisp) { theDisp != nullptr ? wl_display_disconnect(theDisp) : (void)theDisp; });
+  return aWlDisplay.get() != nullptr;
+}
+
 WlWindow::WlWindow(const std::string& theTitle)
 : myTitle(theTitle)
 {
@@ -30,7 +37,7 @@ bool WlWindow::Create()
   Destroy();
 
   myWlDisplay.reset(wl_display_connect(nullptr),
-                    [](wl_display* theDisp) { wl_display_disconnect(theDisp); });
+                    [](wl_display* theDisp) { theDisp != nullptr ? wl_display_disconnect(theDisp) : (void)theDisp; });
   if (myWlDisplay.get() == nullptr)
   {
     std::cerr << "Error: cannot connect to the Wayland server\n";
@@ -93,7 +100,7 @@ bool WlWindow::Create()
   }
 
   myWlSurface.reset(wl_compositor_create_surface(myWlCompositor),
-                    [](wl_surface* theSurf) { wl_surface_destroy(theSurf); });
+                    [](wl_surface* theSurf) { theSurf != nullptr ? wl_surface_destroy(theSurf) : (void)theSurf; });
   if (myWlSurface.get() == nullptr)
   {
     std::cerr << "Error: cannot create Wayland compositor surface\n";
@@ -101,7 +108,7 @@ bool WlWindow::Create()
   }
 
   myWlXdgSurf.reset(xdg_wm_base_get_xdg_surface(myWlXdgWmBase, myWlSurface.get()),
-                    [](xdg_surface* theXdgSurf) { xdg_surface_destroy(theXdgSurf); });
+                    [](xdg_surface* theXdgSurf) { theXdgSurf != nullptr ? xdg_surface_destroy(theXdgSurf) : (void)theXdgSurf; });
 
   static const xdg_surface_listener anXdgSurfList =
   {
@@ -116,7 +123,7 @@ bool WlWindow::Create()
   xdg_surface_add_listener(myWlXdgSurf.get(), &anXdgSurfList, this);
 
   myWlXdgTop.reset(xdg_surface_get_toplevel(myWlXdgSurf.get()),
-                   [](xdg_toplevel* theTop) { xdg_toplevel_destroy(theTop); });
+                   [](xdg_toplevel* theTop) { theTop != nullptr ? xdg_toplevel_destroy(theTop) : (void)theTop; });
   xdg_toplevel_set_title(myWlXdgTop.get(), myTitle.c_str());
 
   static const xdg_toplevel_listener anXdgTopList =
@@ -164,14 +171,14 @@ bool WlWindow::Create()
   wl_surface_commit(myWlSurface.get());
 
   myWlRegion.reset(wl_compositor_create_region(myWlCompositor),
-                   [](wl_region* theReg) { wl_region_destroy(theReg); });
+                   [](wl_region* theReg) { theReg != nullptr ? wl_region_destroy(theReg) : (void)theReg; });
 
   const int aSize[2] { 4, 4 };
   wl_region_add(myWlRegion.get(), 2, 2, aSize[0], aSize[1]);
   wl_surface_set_opaque_region(myWlSurface.get(), myWlRegion.get());
 
   myWlEglWindow.reset(wl_egl_window_create(myWlSurface.get(), aSize[0], aSize[1]),
-                     [](wl_egl_window* theWin) { wl_egl_window_destroy(theWin); });
+                      [](wl_egl_window* theWin) { theWin != nullptr ? wl_egl_window_destroy(theWin) : (void)theWin; });
   if (myWlEglWindow.get() == nullptr)
   {
     std::cerr << "Error: cannot create Wayland EGL window\n";

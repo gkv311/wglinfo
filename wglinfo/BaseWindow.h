@@ -5,6 +5,7 @@
 #ifndef BASEWINDOW_HEADER
 #define BASEWINDOW_HEADER
 
+#include <memory>
 #include <string>
 
 #if defined(_WIN32)
@@ -44,6 +45,9 @@ public:
 
   //! Close window.
   virtual void Destroy() = 0;
+
+  //! Create instance of the same class.
+  virtual std::shared_ptr<BaseWindow> EmptyCopy(const std::string& theTitle) = 0;
 
 };
 
