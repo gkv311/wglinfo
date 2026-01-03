@@ -19,7 +19,7 @@ jobs:
           g++ cmake ninja-build \
           libgl-dev libegl-dev \
           libwayland-dev wayland-protocols libxkbcommon-dev \
-          xvfb
+          xvfb xwayland-run weston
 
     - name: Configure wglinfo
       run: |
@@ -31,10 +31,15 @@ jobs:
         cmake --build "./build" --config Release
         cmake --build "./build" --config Release --target install
 
-    - name: Run wglinfo
+    - name: Run wglinfo in X11
       run: |
         xvfb-run ./install/wglinfo
-        xvfb-run ./install/wglinfo > ./install/wglinfo.log
+        xvfb-run ./install/wglinfo > ./install/wglinfo-x11.log
+
+    - name: Run wglinfo in Wayland
+      run: |
+        wlheadless-run -c weston -- ./install/wglinfo --platform EGL-wayland
+        wlheadless-run -c weston -- ./install/wglinfo --platform EGL-wayland > ./install/wglinfo-wayland.log
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
