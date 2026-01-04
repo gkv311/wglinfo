@@ -1,0 +1,69 @@
+# This workflow will build wglinfo on Linux to WebAssembly
+name: Build (Linux/Emsdk)
+
+on:
+  push:
+    branches: [ "master" ]
+  # allows to run workflow manually
+  workflow_dispatch:
+
+# permissions of the GITHUB_TOKEN to allow deployment to Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build-ubuntu-emsdk:
+    runs-on: ubuntu-24.04
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4.1.7
+      with:
+        fetch-depth: 0
+
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          cmake ninja-build
+
+    - name: Setup emsdk
+      uses: mymindstorm/setup-emsdk@v14
+      with:
+        version: 4.0.5
+        actions-cache-folder: 'emsdk-cache'
+        no-cache: true
+
+    - name: Configure wglinfo
+      run: |
+        mkdir "build"
+        emcc -v
+        cmake -G Ninja -D CMAKE_TOOLCHAIN_FILE:FILEPATH="$EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake" -S . -B "./build" -D CMAKE_INSTALL_PREFIX="install" -D BUILD_TREAT_WARNINGS_AS_ERRORS=ON
+
+    - name: Build wglinfo
+      run: |
+        cmake --build "./build" --config Release
+        cmake --build "./build" --config Release --target install
+        cp ./install/wglinfo.html ./install/index.html
+
+    - name: Upload page artifacts
+      id: deployment
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: install/
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-ubuntu-emsdk
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+    - name: Deploy to Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
