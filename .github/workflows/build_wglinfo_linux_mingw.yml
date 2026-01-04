@@ -1,10 +1,11 @@
 # This workflow will build wglinfo on Linux for Windows
 name: Build (Linux/MinGW64)
 
-on: [push]
+on:
+  workflow_call:
 
 jobs:
-  build-ubuntu:
+  build-linux-mingw:
     runs-on: ubuntu-24.04
     steps:
     - name: Checkout repository

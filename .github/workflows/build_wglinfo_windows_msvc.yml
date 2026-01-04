@@ -1,11 +1,11 @@
 # This workflow will build wglinfo on Windows
 name: Build (Windows/MSVC)
 
-on: [push]
+on:
+  workflow_call:
 
 jobs:
   build-windows-msvc:
-    name: Build on Windows with MSVC
     runs-on: windows-latest
 
     steps:

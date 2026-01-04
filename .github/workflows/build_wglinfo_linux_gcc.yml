@@ -1,10 +1,11 @@
 # This workflow will build wglinfo on Linux
 name: Build (Linux/GCC)
 
-on: [push]
+on:
+  workflow_call:
 
 jobs:
-  build-ubuntu:
+  build-linux-gcc:
     runs-on: ubuntu-24.04
     steps:
     - name: Checkout repository

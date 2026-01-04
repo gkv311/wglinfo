@@ -1,0 +1,22 @@
+# This workflow will build wglinfo
+name: Build (All)
+
+on: [push]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-linux-gcc:
+    uses: ./.github/workflows/build_wglinfo_linux_gcc.yml
+  build-linux-mingw:
+    uses: ./.github/workflows/build_wglinfo_linux_mingw.yml
+  build-macos-clang:
+    uses: ./.github/workflows/build_wglinfo_macos_clang.yml
+  build-windows-msvc:
+    uses: ./.github/workflows/build_wglinfo_windows_msvc.yml
+  build-windows-mingw:
+    uses: ./.github/workflows/build_wglinfo_windows_mingw.yml
+  build-linux-emsdk:
+    uses: ./.github/workflows/build_wglinfo_linux_emsdk.yml
