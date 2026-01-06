@@ -71,7 +71,6 @@ private:
   std::shared_ptr<wl_surface>    myWlSurface;
   std::shared_ptr<xdg_surface>   myWlXdgSurf;
   std::shared_ptr<xdg_toplevel>  myWlXdgTop;
-  std::shared_ptr<wl_region>     myWlRegion;
   std::shared_ptr<wl_egl_window> myWlEglWindow;
 
 };

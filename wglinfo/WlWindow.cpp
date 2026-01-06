@@ -107,8 +107,10 @@ bool WlWindow::Create()
     return false;
   }
 
-  myWlXdgSurf.reset(xdg_wm_base_get_xdg_surface(myWlXdgWmBase, myWlSurface.get()),
-                    [](xdg_surface* theXdgSurf) { theXdgSurf != nullptr ? xdg_surface_destroy(theXdgSurf) : (void)theXdgSurf; });
+  bool toMapWindow = false;
+  if (toMapWindow)
+    myWlXdgSurf.reset(xdg_wm_base_get_xdg_surface(myWlXdgWmBase, myWlSurface.get()),
+                      [](xdg_surface* theXdgSurf) { theXdgSurf != nullptr ? xdg_surface_destroy(theXdgSurf) : (void)theXdgSurf; });
 
   static const xdg_surface_listener anXdgSurfList =
   {
@@ -120,11 +122,15 @@ bool WlWindow::Create()
       xdg_surface_ack_configure(theXdgSurf, theSerial);
     },
   };
-  xdg_surface_add_listener(myWlXdgSurf.get(), &anXdgSurfList, this);
+  if (myWlXdgSurf)
+    xdg_surface_add_listener(myWlXdgSurf.get(), &anXdgSurfList, this);
 
-  myWlXdgTop.reset(xdg_surface_get_toplevel(myWlXdgSurf.get()),
-                   [](xdg_toplevel* theTop) { theTop != nullptr ? xdg_toplevel_destroy(theTop) : (void)theTop; });
-  xdg_toplevel_set_title(myWlXdgTop.get(), myTitle.c_str());
+  if (toMapWindow)
+    myWlXdgTop.reset(xdg_surface_get_toplevel(myWlXdgSurf.get()),
+                     [](xdg_toplevel* theTop) { theTop != nullptr ? xdg_toplevel_destroy(theTop) : (void)theTop; });
+
+  if (myWlXdgTop)
+    xdg_toplevel_set_title(myWlXdgTop.get(), myTitle.c_str());
 
   static const xdg_toplevel_listener anXdgTopList =
   {
@@ -166,16 +172,19 @@ bool WlWindow::Create()
       (void)theCaps;
     }
   };
-  xdg_toplevel_add_listener(myWlXdgTop.get(), &anXdgTopList, this);
+  if (myWlXdgTop)
+    xdg_toplevel_add_listener(myWlXdgTop.get(), &anXdgTopList, this);
 
   wl_surface_commit(myWlSurface.get());
 
-  myWlRegion.reset(wl_compositor_create_region(myWlCompositor),
-                   [](wl_region* theReg) { theReg != nullptr ? wl_region_destroy(theReg) : (void)theReg; });
+  std::shared_ptr<wl_region> aWlRegion;
+  aWlRegion.reset(wl_compositor_create_region(myWlCompositor),
+                  [](wl_region* theReg) { theReg != nullptr ? wl_region_destroy(theReg) : (void)theReg; });
 
   const int aSize[2] { 4, 4 };
-  wl_region_add(myWlRegion.get(), 2, 2, aSize[0], aSize[1]);
-  wl_surface_set_opaque_region(myWlSurface.get(), myWlRegion.get());
+  wl_region_add(aWlRegion.get(), 0, 0, aSize[0], aSize[1]);
+  wl_surface_set_opaque_region(myWlSurface.get(), aWlRegion.get());
+  aWlRegion.reset();
 
   myWlEglWindow.reset(wl_egl_window_create(myWlSurface.get(), aSize[0], aSize[1]),
                       [](wl_egl_window* theWin) { theWin != nullptr ? wl_egl_window_destroy(theWin) : (void)theWin; });
@@ -192,7 +201,6 @@ bool WlWindow::Create()
 void WlWindow::destroyWindow()
 {
   myWlEglWindow.reset();
-  myWlRegion.reset();
   myWlXdgTop.reset();
   myWlXdgSurf.reset();
   myWlSurface.reset();
