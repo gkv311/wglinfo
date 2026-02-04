@@ -55,6 +55,7 @@ jobs:
       uses: actions/upload-pages-artifact@v3
       with:
         path: install/
+        if-no-files-found: error
 
   deploy:
     runs-on: ubuntu-latest

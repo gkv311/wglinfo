@@ -48,5 +48,6 @@ jobs:
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: wglinfo-mingw
+        name: wglinfo-windows-x86_64-mingw
         path: install
+        if-no-files-found: error

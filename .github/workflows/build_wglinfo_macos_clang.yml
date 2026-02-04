@@ -33,6 +33,7 @@ jobs:
       with:
         name: wglinfo-macos-arm64
         path: install
+        if-no-files-found: error
 
   build-macos-intel:
     runs-on: macos-15-intel
@@ -60,5 +61,6 @@ jobs:
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: wglinfo-macos-intel
+        name: wglinfo-macos-x86_64
         path: install
+        if-no-files-found: error
