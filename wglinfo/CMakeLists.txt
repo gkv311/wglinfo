@@ -100,6 +100,11 @@ else()
   endforeach()
 endif()
 
+# auxiliary info for wglinfo.rc
+if (WGLINFO_BUILD_TAG)
+  add_definitions (-DWGLINFO_BUILD_TAG="${WGLINFO_BUILD_TAG}")
+endif()
+
 if (WIN32 OR APPLE OR EMSCRIPTEN)
   set (USE_WAYLAND OFF)
 else()

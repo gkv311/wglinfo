@@ -24,6 +24,7 @@ jobs:
       env:
         WGLINFO_CONFIG: |
           set(BUILD_TREAT_WARNINGS_AS_ERRORS ON CACHE BOOL "")
+          #set(WGLINFO_BUILD_TAG "x86_64-w64-mingw32-gcc" CACHE STRING "")
           set(CMAKE_SYSTEM_NAME Windows)
           set(CMAKE_C_COMPILER   x86_64-w64-mingw32-gcc)
           set(CMAKE_CXX_COMPILER x86_64-w64-mingw32-g++)

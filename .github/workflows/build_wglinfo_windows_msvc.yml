@@ -53,7 +53,8 @@ jobs:
         cmake -G Ninja -S ./wglinfo.git -B ./wglinfo-make ^
           -D CMAKE_BUILD_TYPE=Release ^
           -D CMAKE_INSTALL_PREFIX="%CD%/wglinfo-install" ^
-          -D BUILD_TREAT_WARNINGS_AS_ERRORS=ON
+          -D BUILD_TREAT_WARNINGS_AS_ERRORS=ON ^
+          -D WGLINFO_BUILD_TAG="${{ matrix.arch }}"
     - name: Build wglinfo
       run: |
         cmake --build ./wglinfo-make

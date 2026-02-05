@@ -32,6 +32,7 @@ jobs:
       env:
         WGLINFO_CONFIG: |
           set(BUILD_TREAT_WARNINGS_AS_ERRORS ON CACHE BOOL "")
+          #set(WGLINFO_BUILD_TAG "mingw-w64-ucrt-x86_64-gcc" CACHE STRING "")
           set(CMAKE_BUILD_TYPE     Release)
           set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_LIST_DIR}/wglinfo-install" CACHE PATH "")
       run: |
