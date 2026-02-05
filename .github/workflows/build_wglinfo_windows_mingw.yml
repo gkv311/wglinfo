@@ -32,7 +32,8 @@ jobs:
       env:
         WGLINFO_CONFIG: |
           set(BUILD_TREAT_WARNINGS_AS_ERRORS ON CACHE BOOL "")
-          #set(WGLINFO_BUILD_TAG "mingw-w64-ucrt-x86_64-gcc" CACHE STRING "")
+          set(BUILD_DESC_ARCH "x86_64" CACHE STRING "")
+          set(BUILD_DESC_TAG " [ucrt]" CACHE STRING "")
           set(CMAKE_BUILD_TYPE     Release)
           set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_LIST_DIR}/wglinfo-install" CACHE PATH "")
       run: |
@@ -51,6 +52,6 @@ jobs:
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: wglinfo-windows-x86_64-mingw
+        name: wglinfo-windows-x86_64-mingw-ucrt
         path: wglinfo-install
         if-no-files-found: error

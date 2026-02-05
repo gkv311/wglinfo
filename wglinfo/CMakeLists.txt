@@ -58,51 +58,63 @@ if (NOT WIN32 AND NOT APPLE)
 endif()
 find_package (OpenGL REQUIRED)
 
-set (USED_SRCFILES
+set (USED_INCFILES
   "BaseGlContext.h"
-  "BaseGlContext.cpp"
   "BaseWindow.h"
   "CocoaWindow.h"
-  "CocoaWindow.mm"
   "CglContext.h"
-  "CglContext.mm"
   "EglGlContext.h"
-  "EglGlContext.cpp"
   "GlxContext.h"
-  "GlxContext.cpp"
   "NativeGlContext.h"
   "NativeWindow.h"
   "WasmContext.h"
-  "WasmContext.cpp"
   "WasmWindow.h"
-  "WasmWindow.cpp"
   "WlWindow.h"
-  "WlWindow.cpp"
   "WntWindow.h"
-  "WntWindow.cpp"
   "WglContext.h"
+  "XwWindow.h"
+)
+set (USED_SRCFILES
+  "BaseGlContext.cpp"
+  "CocoaWindow.mm"
+  "CglContext.mm"
+  "EglGlContext.cpp"
+  "GlxContext.cpp"
+  "WasmContext.cpp"
+  "WasmWindow.cpp"
+  "WlWindow.cpp"
+  "WntWindow.cpp"
   "WglContext.cpp"
   "wglinfo.cpp"
-  "XwWindow.h"
   "XwWindow.cpp"
 )
-set (USED_RCFILE "")
-set (USED_MANFILES "")
+set (GEN_RESFILES "")
 if (WIN32)
-  set (USED_RCFILE   "wglinfo.rc")
-  set (USED_MANFILES "wglinfo.manifest")
+  set (BUILD_DESC_ARCH "${CMAKE_GENERATOR_PLATFORM}" CACHE STRING "Target build acrhitecture")
+  set (BUILD_DESC_TAG  ""                            CACHE STRING "Auxiliary build tag")
+  set (WGLINFO_RC_PRODUCTVERSION "")
+  if (NOT "${BUILD_DESC_ARCH}" STREQUAL "")
+    set (WGLINFO_RC_PRODUCTVERSION "-${BUILD_DESC_ARCH}")
+  endif()
+  string (TOLOWER "${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}" BUILD_COMPILER)
+  set (WGLINFO_RC_COMMENTS "Built with ${BUILD_COMPILER}${BUILD_DESC_TAG}")
+  configure_file ("wglinfo.rc.in"    "${CMAKE_BINARY_DIR}/wglinfo.rc" @ONLY NEWLINE_STYLE CRLF)
+  configure_file ("wglinfo.manifest" "${CMAKE_BINARY_DIR}/wglinfo.manifest" COPYONLY)
+  set (GEN_RESFILES "${CMAKE_BINARY_DIR}/wglinfo.rc")
+else()
+  foreach (aFileIter "wglinfo.rc.in" "wglinfo.manifest")
+    set_source_files_properties (${aFileIter} PROPERTIES HEADER_FILE_ONLY TRUE)
+  endforeach()
 endif()
+source_group ("Source Files"   FILES ${USED_SRCFILES})
+source_group ("Header Files"   FILES ${USED_INCFILES})
+source_group ("Resource Files" FILES "wglinfo.rc.in" "wglinfo.manifest" ${GEN_RESFILES})
 if (APPLE)
   #set (CMAKE_OSX_DEPLOYMENT_TARGET "10.10" CACHE STRING "Minimum OS X deployment version" FORCE)
 else()
   foreach (aFileIter "CglContext.mm" "CocoaWindow.mm")
     set_source_files_properties (${aFileIter} PROPERTIES HEADER_FILE_ONLY TRUE)
   endforeach()
-endif()
-
-# auxiliary info for wglinfo.rc
-if (WGLINFO_BUILD_TAG)
-  add_definitions (-DWGLINFO_BUILD_TAG="${WGLINFO_BUILD_TAG}")
 endif()
 
 if (WIN32 OR APPLE OR EMSCRIPTEN)
@@ -149,7 +161,8 @@ endmacro()
 
 # main project target
 add_executable (${PROJECT_NAME}
-  ${USED_SRCFILES} ${USED_RCFILE} ${USED_MANFILES}
+  ${USED_SRCFILES} ${USED_INCFILES} ${GEN_RESFILES}
+  wglinfo.rc.in wglinfo.manifest
   ../README.md ../LICENSE.txt
 )
 if (USE_WAYLAND)
