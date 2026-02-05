@@ -5,8 +5,16 @@ on:
   workflow_call:
 
 jobs:
-  build-macos-arm64:
-    runs-on: macos-15
+  build:
+    strategy:
+      matrix:
+        arch: [arm64, x86_64]
+        include:
+          - os: macos-15
+            arch: arm64
+          - os: macos-15-intel
+            arch: x86_64
+    runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout repository
       uses: actions/checkout@v6
@@ -17,6 +25,8 @@ jobs:
       env:
         WGLINFO_CONFIG: |
           set(BUILD_TREAT_WARNINGS_AS_ERRORS ON CACHE BOOL "")
+          set(CMAKE_OSX_DEPLOYMENT    "10.10")
+          set(CMAKE_OSX_ARCHITECTURES "${{ matrix.arch }}")
           set(CMAKE_BUILD_TYPE     Release)
           set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_LIST_DIR}/wglinfo-install" CACHE PATH "")
       run: |
@@ -31,44 +41,10 @@ jobs:
     - name: Run wglinfo
       run: |
         ./wglinfo-install/wglinfo
-        ./wglinfo-install/wglinfo 2>&1 > ./wglinfo-install/wglinfo.log
+        #./wglinfo-install/wglinfo 2>&1 > ./wglinfo-install/wglinfo.log
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: wglinfo-macos-arm64
-        path: wglinfo-install
-        if-no-files-found: error
-
-  build-macos-intel:
-    runs-on: macos-15-intel
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v6
-      with:
-        path: wglinfo.git
-        fetch-depth: 1
-    - name: Configure wglinfo
-      env:
-        WGLINFO_CONFIG: |
-          set(BUILD_TREAT_WARNINGS_AS_ERRORS ON CACHE BOOL "")
-          set(CMAKE_BUILD_TYPE     Release)
-          set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_LIST_DIR}/wglinfo-install" CACHE PATH "")
-      run: |
-        echo "${WGLINFO_CONFIG}" | tee ./wglinfo-make.cmake
-        cmake -S ./wglinfo.git -B ./wglinfo-make -G Ninja --toolchain "$PWD/wglinfo-make.cmake"
-    - name: Build wglinfo
-      run: |
-        cmake --build ./wglinfo-make
-    - name: Install wglinfo
-      run: |
-        cmake --install ./wglinfo-make --prefix ./wglinfo-install
-    - name: Run wglinfo
-      run: |
-        ./wglinfo-install/wglinfo
-        ./wglinfo-install/wglinfo 2>&1 > ./wglinfo-install/wglinfo.log
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: wglinfo-macos-x86_64
+        name: wglinfo-macos-${{ matrix.arch }}
         path: wglinfo-install
         if-no-files-found: error

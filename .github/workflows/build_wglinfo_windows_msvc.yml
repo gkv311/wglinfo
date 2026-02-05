@@ -5,11 +5,11 @@ on:
   workflow_call:
 
 jobs:
-  build-windows-msvc:
-    runs-on: windows-latest
+  build:
     strategy:
       matrix:
         arch: [x86_64, x86, arm64, arm32]
+    runs-on: windows-latest
     steps:
     - name: Checkout repository
       uses: actions/checkout@v6
