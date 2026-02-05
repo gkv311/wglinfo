@@ -1,5 +1,5 @@
 # This workflow will build wglinfo on macOS
-name: Build (macOS/Clang)
+name: Build (macOS)
 
 on:
   workflow_call:

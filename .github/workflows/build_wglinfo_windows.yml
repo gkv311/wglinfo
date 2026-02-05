@@ -1,0 +1,178 @@
+# This workflow will build wglinfo for Windows
+name: Build (Windows)
+
+on:
+  workflow_call:
+
+jobs:
+  # build using MSVC for different target architectures
+  build-msvc:
+    strategy:
+      matrix:
+        arch: [x86_64, x86, arm64, arm32]
+    runs-on: windows-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+      with:
+        path: wglinfo.git
+        fetch-depth: 1
+    - name: Configure environment
+      id: cfg
+      shell: bash
+      run: |
+        if [ "${{ matrix.arch }}" == "arm64" ]; then
+          echo "arch=amd64_arm64" >> $GITHUB_OUTPUT
+        elif [ "${{ matrix.arch }}" == "arm32" ]; then
+          echo "arch=amd64_arm" >> $GITHUB_OUTPUT
+        else
+          echo "arch=${{ matrix.arch }}" >> $GITHUB_OUTPUT
+        fi
+    - name: Install Windows 11 SDK (ARM32)
+      if: matrix.arch == 'arm32'
+      run: |
+        # workaround 'kernel32.lib' missing errors - use older SDK
+        # Windows 11 SDK (10.0.22621.2428)
+        # https://developer.microsoft.com/en-us/windows/downloads/sdk-archive/index-legacy
+        Invoke-WebRequest -Method Get -Uri https://go.microsoft.com/fwlink/p/?LinkId=2250105 -OutFile sdksetup.exe -UseBasicParsing
+        Unblock-File sdksetup.exe
+        Start-Process -Wait sdksetup.exe -ArgumentList "/q", "/norestart", "/ceip off"
+    - name: Setup MSVC (ARM32)
+      if: matrix.arch == 'arm32'
+      uses: ilammy/msvc-dev-cmd@v1.13.0
+      with:
+        arch: '${{ steps.cfg.outputs.arch }}'
+        sdk:  '10.0.22621.0'
+    - name: Setup MSVC
+      if: matrix.arch != 'arm32'
+      uses: ilammy/msvc-dev-cmd@v1.13.0
+      with:
+        arch: '${{ steps.cfg.outputs.arch }}'
+    - name: Configure wglinfo
+      shell: cmd
+      run: |
+        cmake -G Ninja -S ./wglinfo.git -B ./wglinfo-make ^
+          -D CMAKE_BUILD_TYPE=Release ^
+          -D CMAKE_INSTALL_PREFIX="%CD%/wglinfo-install" ^
+          -D BUILD_TREAT_WARNINGS_AS_ERRORS=ON ^
+          -D BUILD_DESC_ARCH="${{ matrix.arch }}"
+    - name: Build wglinfo
+      run: |
+        cmake --build ./wglinfo-make
+    - name: Install wglinfo
+      run: |
+        cmake --install ./wglinfo-make --prefix ./wglinfo-install
+    - name: Run wglinfo
+      if: ${{ (matrix.arch != 'arm64') && (matrix.arch != 'arm32') }}
+      run: |
+        ./wglinfo-install/wglinfo.exe
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: wglinfo-windows-${{ matrix.arch }}-msvc
+        path: wglinfo-install
+        if-no-files-found: error
+
+  # cross-compile on Linux using MinGW toolchain (older GCC + MSVCRT)
+  build-mingw:
+    runs-on: ubuntu-24.04
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+      with:
+        path: wglinfo.git
+        fetch-depth: 1
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          g++ cmake ninja-build \
+          mingw-w64 mingw-w64-common mingw-w64-tools binutils-mingw-w64-x86-64 g++-mingw-w64-x86-64 gcc-mingw-w64-x86-64 \
+          xvfb wine
+    - name: Configure wglinfo
+      env:
+        WGLINFO_CONFIG: |
+          set(BUILD_TREAT_WARNINGS_AS_ERRORS ON CACHE BOOL "")
+          set(BUILD_DESC_ARCH   "x86_64" CACHE STRING "")
+          set(BUILD_DESC_TAG " [msvcrt]" CACHE STRING "")
+          set(CMAKE_SYSTEM_NAME Windows)
+          set(CMAKE_C_COMPILER   x86_64-w64-mingw32-gcc)
+          set(CMAKE_CXX_COMPILER x86_64-w64-mingw32-g++)
+          set(CMAKE_RC_COMPILER  x86_64-w64-mingw32-windres)
+          set(CMAKE_FIND_ROOT_PATH /usr/x86_64-w64-mingw32)
+          set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+          set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+          set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+          set(CMAKE_BUILD_TYPE     Release)
+          set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_LIST_DIR}/wglinfo-install" CACHE PATH "")
+      run: |
+        echo "${WGLINFO_CONFIG}" | tee ./wglinfo-make.cmake
+        cmake -S ./wglinfo.git -B ./wglinfo-make -G Ninja --toolchain "$PWD/wglinfo-make.cmake"
+    - name: Build wglinfo
+      run: |
+        cmake --build ./wglinfo-make
+    - name: Install wglinfo
+      run: |
+        cmake --install ./wglinfo-make --prefix ./wglinfo-install
+    - name: Run wglinfo
+      run: |
+        xvfb-run wine ./wglinfo-install/wglinfo.exe
+        #xvfb-run wine ./wglinfo-install/wglinfo.exe > ./wglinfo-install/wglinfo.log
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: wglinfo-windows-x86_64-mingw-msvcrt
+        path: wglinfo-install
+        if-no-files-found: error
+
+  # build on Windows using MSYS2 (latest GCC + UCRT)
+  build-msys2:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+      with:
+        path: wglinfo.git
+        fetch-depth: 1
+    - name: Setup MSYS2
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: ucrt64
+        update: true
+        install: >-
+          git
+          make
+        pacboy: >-
+          toolchain:p
+          cmake:p
+          ninja:p
+    - name: Configure wglinfo
+      env:
+        WGLINFO_CONFIG: |
+          set(BUILD_TREAT_WARNINGS_AS_ERRORS ON CACHE BOOL "")
+          set(BUILD_DESC_ARCH "x86_64" CACHE STRING "")
+          set(BUILD_DESC_TAG " [ucrt]" CACHE STRING "")
+          set(CMAKE_BUILD_TYPE     Release)
+          set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_LIST_DIR}/wglinfo-install" CACHE PATH "")
+      run: |
+        echo "${WGLINFO_CONFIG}" | tee ./wglinfo-make.cmake
+        cmake -S ./wglinfo.git -B ./wglinfo-make -G Ninja --toolchain "$PWD/wglinfo-make.cmake"
+    - name: Build wglinfo
+      run: |
+        cmake --build ./wglinfo-make
+    - name: Install wglinfo
+      run: |
+        cmake --install ./wglinfo-make --prefix ./wglinfo-install
+    - name: Run wglinfo
+      run: |
+        ./wglinfo-install/wglinfo.exe
+        #./wglinfo-install/wglinfo.exe > ./wglinfo-install/wglinfo.log
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: wglinfo-windows-x86_64-mingw-ucrt
+        path: wglinfo-install
+        if-no-files-found: error

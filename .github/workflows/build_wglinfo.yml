@@ -8,15 +8,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-linux-gcc:
-    uses: ./.github/workflows/build_wglinfo_linux_gcc.yml
-  build-linux-mingw:
-    uses: ./.github/workflows/build_wglinfo_linux_mingw.yml
-  build-macos-clang:
-    uses: ./.github/workflows/build_wglinfo_macos_clang.yml
-  build-windows-msvc:
-    uses: ./.github/workflows/build_wglinfo_windows_msvc.yml
-  build-windows-mingw:
-    uses: ./.github/workflows/build_wglinfo_windows_mingw.yml
-  build-linux-emsdk:
-    uses: ./.github/workflows/build_wglinfo_linux_emsdk.yml
+  ubuntu:
+    uses: ./.github/workflows/build_wglinfo_ubuntu.yml
+  macos:
+    uses: ./.github/workflows/build_wglinfo_macos.yml
+  windows:
+    uses: ./.github/workflows/build_wglinfo_windows.yml
+  wasm:
+    uses: ./.github/workflows/build_wglinfo_wasm.yml
