@@ -10,49 +10,45 @@ jobs:
     strategy:
       matrix:
         arch: [x86_64, x86, amd64_arm64]
-
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4.1.7
+      uses: actions/checkout@v6
       with:
-        fetch-depth: 0
-
+        path: wglinfo.git
+        fetch-depth: 1
     - name: Setup MSVC
       uses: ilammy/msvc-dev-cmd@v1.13.0
       with:
         arch: '${{ matrix.arch }}'
-
     - name: Configure wglinfo
+      shell: cmd
       run: |
-        mkdir "build"
-        cmake -G Ninja -D BUILD_TREAT_WARNINGS_AS_ERRORS=ON -S . -B "./build" -D CMAKE_INSTALL_PREFIX="install"
-
+        cmake -G Ninja -S ./wglinfo.git -B ./wglinfo-make ^
+          -D CMAKE_BUILD_TYPE=Release ^
+          -D CMAKE_INSTALL_PREFIX="%CD%/wglinfo-install" ^
+          -D BUILD_TREAT_WARNINGS_AS_ERRORS=ON
     - name: Build wglinfo
       run: |
-        cmake --build "./build" --config Release
-
+        cmake --build ./wglinfo-make
     - name: Install wglinfo
       run: |
-        cmake --install "./build" --config Release
-
+        cmake --install ./wglinfo-make --prefix ./wglinfo-install
     - name: Run wglinfo
       if: matrix.arch != 'amd64_arm64'
       run: |
-        install/wglinfo.exe
-        install/wglinfo.exe > install/wglinfo.log
-
+        ./wglinfo-install/wglinfo.exe
+        ./wglinfo-install/wglinfo.exe > ./wglinfo-install/wglinfo.log
     - name: Upload artifacts
       if: matrix.arch != 'amd64_arm64'
       uses: actions/upload-artifact@v4
       with:
         name: wglinfo-windows-${{ matrix.arch }}-msvc
-        path: install
+        path: wglinfo-install
         if-no-files-found: error
-
     - name: Upload artifacts
       if: matrix.arch == 'amd64_arm64'
       uses: actions/upload-artifact@v4
       with:
         name: wglinfo-windows-arm64-msvc
-        path: install
+        path: wglinfo-install
         if-no-files-found: error

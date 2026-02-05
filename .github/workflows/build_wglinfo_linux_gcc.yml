@@ -9,10 +9,10 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4.1.7
+      uses: actions/checkout@v6
       with:
-        fetch-depth: 0
-
+        path: wglinfo.git
+        fetch-depth: 1
     - name: Install Dependencies
       run: |
         sudo apt-get update
@@ -21,30 +21,33 @@ jobs:
           libgl-dev libegl-dev \
           libwayland-dev wayland-protocols libxkbcommon-dev \
           xvfb xwayland-run weston
-
     - name: Configure wglinfo
+      env:
+        WGLINFO_CONFIG: |
+          set(USE_WAYLAND ON CACHE BOOL "")
+          set(BUILD_TREAT_WARNINGS_AS_ERRORS ON CACHE BOOL "")
+          set(CMAKE_BUILD_TYPE     Release)
+          set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_LIST_DIR}/wglinfo-install" CACHE PATH "")
       run: |
-        mkdir "build"
-        cmake -G Ninja -D BUILD_TREAT_WARNINGS_AS_ERRORS=ON -S . -B "./build" -D CMAKE_INSTALL_PREFIX="install" -D USE_WAYLAND=ON
-
+        echo "${WGLINFO_CONFIG}" | tee ./wglinfo-make.cmake
+        cmake -S ./wglinfo.git -B ./wglinfo-make -G Ninja --toolchain "$PWD/wglinfo-make.cmake"
     - name: Build wglinfo
       run: |
-        cmake --build "./build" --config Release
-        cmake --build "./build" --config Release --target install
-
+        cmake --build ./wglinfo-make
+    - name: Install wglinfo
+      run: |
+        cmake --install ./wglinfo-make --prefix ./wglinfo-install
     - name: Run wglinfo in X11
       run: |
-        xvfb-run ./install/wglinfo
-        xvfb-run ./install/wglinfo > ./install/wglinfo-x11.log
-
+        xvfb-run ./wglinfo-install/wglinfo
+        xvfb-run ./wglinfo-install/wglinfo > ./wglinfo-install/wglinfo-x11.log
     - name: Run wglinfo in Wayland
       run: |
-        wlheadless-run -c weston -- ./install/wglinfo --platform EGL-wayland
-        wlheadless-run -c weston -- ./install/wglinfo --platform EGL-wayland > ./install/wglinfo-wayland.log
-
+        wlheadless-run -c weston -- ./wglinfo-install/wglinfo --platform EGL-wayland
+        wlheadless-run -c weston -- ./wglinfo-install/wglinfo --platform EGL-wayland > ./wglinfo-install/wglinfo-wayland.log
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
         name: wglinfo-linux-x86_64
-        path: install
+        path: wglinfo-install
         if-no-files-found: error

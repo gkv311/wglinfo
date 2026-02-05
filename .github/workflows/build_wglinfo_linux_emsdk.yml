@@ -21,42 +21,44 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4.1.7
+      uses: actions/checkout@v6
       with:
-        fetch-depth: 0
-
+        path: wglinfo.git
+        fetch-depth: 1
     - name: Install Dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y \
           cmake ninja-build
-
     - name: Setup emsdk
       uses: mymindstorm/setup-emsdk@v14
       with:
         version: 4.0.5
         actions-cache-folder: 'emsdk-cache'
         no-cache: true
-
     - name: Configure wglinfo
+      env:
+        WGLINFO_CONFIG: |
+          set(BUILD_TREAT_WARNINGS_AS_ERRORS ON CACHE BOOL "")
+          include($ENV{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake)
+          set(CMAKE_BUILD_TYPE     Release)
+          set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_LIST_DIR}/wglinfo-install" CACHE PATH "")
       run: |
-        mkdir "build"
+        echo "${WGLINFO_CONFIG}" | tee ./wglinfo-make.cmake
         emcc -v
-        cmake -G Ninja -D CMAKE_TOOLCHAIN_FILE:FILEPATH="$EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake" -S . -B "./build" -D CMAKE_INSTALL_PREFIX="install" -D BUILD_TREAT_WARNINGS_AS_ERRORS=ON
-
+        cmake -S ./wglinfo.git -B ./wglinfo-make -G Ninja --toolchain "$PWD/wglinfo-make.cmake"
     - name: Build wglinfo
       run: |
-        cmake --build "./build" --config Release
-        cmake --build "./build" --config Release --target install
-        cp ./install/wglinfo.html ./install/index.html
-
+        cmake --build ./wglinfo-make
+    - name: Install wglinfo
+      run: |
+        cmake --install ./wglinfo-make --prefix ./wglinfo-install
+        cp ./wglinfo-install/wglinfo.html ./wglinfo-install/index.html
     - name: Upload artifacts
       id: deployment
       uses: actions/upload-pages-artifact@v3
       with:
-        path: install/
-        if-no-files-found: error
-
+        path: wglinfo-install/
   deploy:
     runs-on: ubuntu-latest
     needs: build-linux-emsdk
