@@ -475,14 +475,16 @@ const char* WglInfo::getArchString()
   return "x86";
 #elif defined(__aarch64__) && defined(__LP64__)
   return "AArch64 64-bit";
-#elif defined(__arm__) || defined(__arm64__)
+#elif defined(__arm__) || defined(__arm64__) || defined(_M_ARM) || defined(_M_ARM64)
 #if defined(__ARM_ARCH_7A__)
   return "ARMv7-A 32-bit";
-#elif defined(__ARM_ARCH_7R__)
-  return "ARMv7-R 32-bit";
+#elif defined(_M_ARM_ARMV7VE)
+  return "ARMv7-E 32-bit";
 #elif defined(__ARM_ARCH_7M__)
   return "ARMv7-M 32-bit";
-#elif defined(__LP64__)
+#elif defined(__ARM_ARCH_7R__)
+  return "ARMv7-R 32-bit";
+#elif defined(__LP64__) || defined(_M_ARM64)
   return "ARM 64-bit";
 #else
   return "ARM 32-bit";
