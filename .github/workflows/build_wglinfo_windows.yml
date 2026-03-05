@@ -77,7 +77,7 @@ jobs:
       run: |
         .\wglinfo-install\wglinfo.exe
     - name: Run wglinfo (EGL/Firefox)
-      if: ${{ (matrix.arch == 'x86_64') }}
+      if: ${{ (matrix.arch == 'x86_64') || (matrix.arch == 'arm64') }}
       shell: cmd
       run: |
         set "PATH=%ProgramW6432%\Mozilla Firefox;%PATH%"
