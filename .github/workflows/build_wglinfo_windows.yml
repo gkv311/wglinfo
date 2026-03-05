@@ -8,6 +8,7 @@ jobs:
   # build using MSVC for different target architectures
   build-msvc:
     strategy:
+      fail-fast: false
       matrix:
         arch: [x86_64, x86, arm64, arm32]
         include:
@@ -71,10 +72,16 @@ jobs:
     - name: Install wglinfo
       run: |
         cmake --install ./wglinfo-make --prefix ./wglinfo-install
-    - name: Run wglinfo
+    - name: Run wglinfo (WGL)
       if: ${{ (matrix.arch != 'arm32') }}
       run: |
-        ./wglinfo-install/wglinfo.exe
+        .\wglinfo-install\wglinfo.exe
+    - name: Run wglinfo (EGL/Firefox)
+      if: ${{ (matrix.arch == 'x86_64') }}
+      shell: cmd
+      run: |
+        set "PATH=%ProgramW6432%\Mozilla Firefox;%PATH%"
+        .\wglinfo-install\wglinfo.exe --platform EGL
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
@@ -125,7 +132,7 @@ jobs:
         cmake --install ./wglinfo-make --prefix ./wglinfo-install
     - name: Run wglinfo
       run: |
-        xvfb-run wine ./wglinfo-install/wglinfo.exe
+        xvfb-run -a wine ./wglinfo-install/wglinfo.exe
         #xvfb-run wine ./wglinfo-install/wglinfo.exe > ./wglinfo-install/wglinfo.log
     - name: Upload artifacts
       uses: actions/upload-artifact@v4

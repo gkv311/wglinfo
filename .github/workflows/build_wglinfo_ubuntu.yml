@@ -39,12 +39,20 @@ jobs:
         cmake --install ./wglinfo-make --prefix ./wglinfo-install
     - name: Run wglinfo in X11
       run: |
-        xvfb-run ./wglinfo-install/wglinfo
-        xvfb-run ./wglinfo-install/wglinfo > ./wglinfo-install/wglinfo-x11.log
+        xvfb-run -a ./wglinfo-install/wglinfo | tee ./wglinfo-install/wglinfo-x11.log
     - name: Run wglinfo in Wayland
       run: |
-        wlheadless-run -c weston -- ./wglinfo-install/wglinfo --platform EGL-wayland
-        wlheadless-run -c weston -- ./wglinfo-install/wglinfo --platform EGL-wayland > ./wglinfo-install/wglinfo-wayland.log
+        wlheadless-run -c weston -- ./wglinfo-install/wglinfo --platform EGL-wayland | tee ./wglinfo-install/wglinfo-wayland.log
+    - name: Run wglinfo in X11 / EGL from Chromium
+      env:
+        EGL_BROWSER_LIBS: /usr/local/share/chromium/chrome-linux
+        # these are located here when installed from `apt-get install chromium`
+        #EGL_BROWSER_LIBS: /snap/chromium/current/usr/lib/chromium-browser
+      run: |
+        #ls -la ${EGL_BROWSER_LIBS}
+        ldd ${EGL_BROWSER_LIBS}/libEGL.so
+        export LD_PRELOAD=${EGL_BROWSER_LIBS}/libEGL.so:${EGL_BROWSER_LIBS}/libGLESv2.so
+        xvfb-run -a ./wglinfo-install/wglinfo --platform EGL | tee ./wglinfo-install/wglinfo-x11-chromium.log
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
