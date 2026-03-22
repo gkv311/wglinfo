@@ -473,6 +473,8 @@ const char* WglInfo::getArchString()
   return "x86_64";
 #elif defined(__i386) || defined(_M_IX86) || defined(__X86__)|| defined(_X86_)
   return "x86";
+#elif defined(_M_IA64) || defined(__ia64__)
+  return "IA-64";
 #elif defined(__aarch64__) && defined(__LP64__)
   return "AArch64 64-bit";
 #elif defined(__arm__) || defined(__arm64__) || defined(_M_ARM) || defined(_M_ARM64)

@@ -83,7 +83,7 @@ jobs:
         set "PATH=%ProgramW6432%\Mozilla Firefox;%PATH%"
         .\wglinfo-install\wglinfo.exe --platform EGL
     - name: Upload artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: wglinfo-windows-${{ matrix.arch }}-msvc
         path: wglinfo-install
@@ -135,7 +135,7 @@ jobs:
         xvfb-run -a wine ./wglinfo-install/wglinfo.exe
         #xvfb-run wine ./wglinfo-install/wglinfo.exe > ./wglinfo-install/wglinfo.log
     - name: Upload artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: wglinfo-windows-x86_64-mingw-msvcrt
         path: wglinfo-install
@@ -187,7 +187,7 @@ jobs:
         ./wglinfo-install/wglinfo.exe
         #./wglinfo-install/wglinfo.exe > ./wglinfo-install/wglinfo.log
     - name: Upload artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: wglinfo-windows-x86_64-mingw-ucrt
         path: wglinfo-install

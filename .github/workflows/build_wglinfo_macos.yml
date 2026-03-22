@@ -44,7 +44,7 @@ jobs:
         ./wglinfo-install/wglinfo
         #./wglinfo-install/wglinfo 2>&1 > ./wglinfo-install/wglinfo.log
     - name: Upload artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: wglinfo-macos-${{ matrix.arch }}
         path: wglinfo-install

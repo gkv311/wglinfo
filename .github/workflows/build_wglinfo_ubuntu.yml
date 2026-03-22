@@ -54,7 +54,7 @@ jobs:
         export LD_PRELOAD=${EGL_BROWSER_LIBS}/libEGL.so:${EGL_BROWSER_LIBS}/libGLESv2.so
         xvfb-run -a ./wglinfo-install/wglinfo --platform EGL | tee ./wglinfo-install/wglinfo-x11-chromium.log
     - name: Upload artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: wglinfo-linux-x86_64
         path: wglinfo-install
