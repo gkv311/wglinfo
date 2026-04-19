@@ -21,7 +21,7 @@ BEGIN
     BEGIN
       VALUE "FileDescription", "wglinfo\000"
       VALUE "FileVersion", "26.2\000"
-      VALUE "LegalCopyright", "\251 2018-2026 Kirill Gavrilov Tartynskih\000"
+      VALUE "LegalCopyright", L"\251 2018-2026 Kirill Gavrilov Tartynskih\000"
       VALUE "ProductName", "wglinfo\000"
       VALUE "ProductVersion", "26.2" WGLINFO_RC_PRODUCTVERSION "\000"
       VALUE "OfficialSite", "www.sview.ru\000"
