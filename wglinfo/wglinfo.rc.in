@@ -5,6 +5,8 @@
 CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "wglinfo.manifest"
 #endif
 
+#pragma code_page(1252)
+
 #define WGLINFO_RC_PRODUCTVERSION "@WGLINFO_RC_PRODUCTVERSION@"
 #define WGLINFO_RC_COMMENTS "@WGLINFO_RC_COMMENTS@"
 
@@ -21,7 +23,7 @@ BEGIN
     BEGIN
       VALUE "FileDescription", "wglinfo\000"
       VALUE "FileVersion", "26.2\000"
-      VALUE "LegalCopyright", "\251 2018-2026 Kirill Gavrilov Tartynskih\000"
+      VALUE "LegalCopyright", L"\251 2018-2026 Kirill Gavrilov Tartynskih\000"
       VALUE "ProductName", "wglinfo\000"
       VALUE "ProductVersion", "26.2" WGLINFO_RC_PRODUCTVERSION "\000"
       VALUE "OfficialSite", "www.sview.ru\000"
