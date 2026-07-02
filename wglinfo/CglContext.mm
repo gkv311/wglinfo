@@ -24,7 +24,10 @@
 
 #include <iomanip>
 #include <iostream>
+#include <map>
 #include <memory>
+#include <set>
+#include <vector>
 
 #if defined(__GNUC__) && !defined(__INTEL_COMPILER) && !defined(__clang__)
   #if (__GNUC__ > 8) || ((__GNUC__ == 8) && (__GNUC_MINOR__ >= 1))
@@ -208,9 +211,302 @@ void CglContext::PrintGpuMemoryInfo()
   }
 }
 
+struct CglContextPixelAttr
+{
+  CGLPixelFormatAttribute Enum;
+  const char*             Name;
+};
+
+static const CglContextPixelAttr ThePixelAttributes[] =
+{
+  { kCGLPFAColorSize,             "Color Size" },
+  { kCGLPFAColorFloat,            "Color Float" },
+  { kCGLPFAAlphaSize,             "Alpha Size" },
+  { kCGLPFADepthSize,             "Depth Size" },
+  { kCGLPFAStencilSize,           "Stencil Size" },
+  { kCGLPFAAccelerated,           "Accelerated" },
+  { kCGLPFAAcceleratedCompute,    "Accelerated Compute" },
+  { kCGLPFAOpenGLProfile,         "OpenGL Profile" },
+  { kCGLPFAAllRenderers,          "All Renderers" },
+  { kCGLPFADoubleBuffer,          "Double Buffered" },
+  { kCGLPFATripleBuffer,          "Tripple Buffered" },
+  { kCGLPFAAuxBuffers,            "Aux Buffers" },
+  { kCGLPFAAuxDepthStencil,       "Aux Depth Stencil" },
+  { kCGLPFAAccumSize,             "Accum Size" },
+  { kCGLPFAMinimumPolicy,         "Minimum Policy" },
+  { kCGLPFAMaximumPolicy,         "Maximum Policy" },
+  { kCGLPFASampleBuffers,         "Sample Buffers" },
+  { kCGLPFASamples,               "Samples" },
+  { kCGLPFAMultisample,           "Multisample" },
+  { kCGLPFASupersample,           "Supersample" },
+  { kCGLPFARendererID,            "Renderer ID" },
+  { kCGLPFANoRecovery,            "No Recovery" },
+  { kCGLPFAClosestPolicy,         "Closest Policy" },
+  { kCGLPFABackingStore,          "Backing Store" },
+  { kCGLPFADisplayMask,           "Display Mask" },
+  { kCGLPFAAllowOfflineRenderers, "Allow Offline Renderers" },
+  { kCGLPFAVirtualScreenCount,    "Virtual Screen Count" },
+  // obsolete
+  { kCGLPFAStereo,         "Stereo" },
+  { kCGLPFACompliant,      "Compliant" },
+  { kCGLPFARemotePBuffer,  "Remote PBuffer" },
+  { kCGLPFASingleRenderer, "Single Renderer" },
+  { kCGLPFAWindow,         "Window" },
+//{ kCGLPFAOffScreen,      "Off Screen" },
+//{ kCGLPFAPBuffer,        "PBuffer" },
+//{ kCGLPFAFullScreen,     "Full Screen" },
+//{ kCGLPFAMPSafe,         "MP Safe" },
+//{ kCGLPFAMultiScreen,    "Multi Screen" },
+//{ kCGLPFARobust,         "Robust" },
+};
+
 void CglContext::PrintVisuals(bool theIsVerbose)
 {
-  (void)theIsVerbose;
+  // there is no way to enumeration all formats;
+  // instead - try calling CGLChoosePixelFormat() with different arguments,
+  // which are known to return different formats
+  typedef std::map<CGLPixelFormatAttribute, GLint> FormatInfo;
+  std::set<FormatInfo> aFormatsMap;
+  std::vector<FormatInfo> aFormats;
+
+  const auto addFormat = [&aFormatsMap, &aFormats](const CGLPixelFormatAttribute* theAttribs)
+  {
+    CGLPixelFormatObj aFormat = nullptr;
+    GLint aNbPixs = 0;
+    if (CGLChoosePixelFormat(theAttribs, &aFormat, &aNbPixs) != kCGLNoError)
+      return;
+
+    for (GLint aPixIter = 0; aPixIter < aNbPixs; ++aPixIter)
+    {
+      FormatInfo anInfo;
+      for (const CglContextPixelAttr& anAttrIter : ThePixelAttributes)
+      {
+        GLint aVal = 0;
+        if (CGLDescribePixelFormat(aFormat, aPixIter, anAttrIter.Enum, &aVal) == kCGLNoError)
+          anInfo[anAttrIter.Enum] = aVal;
+      }
+
+      if (aFormatsMap.find(anInfo) != aFormatsMap.cend())
+        return;
+
+      aFormatsMap.insert(anInfo);
+      aFormats.push_back(anInfo);
+    }
+
+    CGLDestroyPixelFormat(aFormat);
+  };
+
+  for (int anAccel = 1; anAccel >= 0; --anAccel)
+  {
+    for (int aColor : {128, 64, 0})
+    {
+      for (int aProf = 4; aProf >= 2; --aProf)
+      {
+        std::array<int, 32> anAttribs = {};
+        int aLastAttrib = 0;
+
+        //anAttribs[aLastAttrib++] = kCGLPFAMinimumPolicy;
+        //anAttribs[aLastAttrib++] = kCGLPFAClosestPolicy;
+
+        if (aColor >= 64)
+        {
+          // half-float or 32-bit float format
+          anAttribs[aLastAttrib++] = kCGLPFAColorFloat;
+          anAttribs[aLastAttrib++] = kCGLPFAColorSize;
+          anAttribs[aLastAttrib++] = aColor;
+        }
+        else if (aColor != 0)
+        {
+          // this doesn't make any difference on modern macOS - 32 bit format is always returned
+          anAttribs[aLastAttrib++] = kCGLPFAColorSize;
+          anAttribs[aLastAttrib++] = aColor;
+        }
+
+        // this doesn't make any difference on modern macOS - 32 bit depth is always returned
+        anAttribs[aLastAttrib++] = kCGLPFADepthSize;
+        anAttribs[aLastAttrib++] = 24;
+
+        anAttribs[aLastAttrib++] = kCGLPFAStencilSize;
+        anAttribs[aLastAttrib++] = 8;
+
+        anAttribs[aLastAttrib++] = kCGLPFADoubleBuffer;
+
+        if (anAccel == 1)
+        {
+          anAttribs[aLastAttrib++] = kCGLPFAAccelerated;
+        }
+        else
+        {
+          anAttribs[aLastAttrib++] = kCGLPFARendererID;
+          anAttribs[aLastAttrib++] = kCGLRendererGenericFloatID;
+        }
+
+        // obsolete, modern macOS doesn't support it
+        //anAttribs[aLastAttrib++] = kCGLPFAStereo;
+
+        if (aProf != 2)
+        {
+          anAttribs[aLastAttrib++] = kCGLPFAOpenGLProfile;
+          //kCGLOGLPVersion_Legacy
+          anAttribs[aLastAttrib++] = aProf == 4 ? kCGLOGLPVersion_GL4_Core : kCGLOGLPVersion_3_2_Core;
+        }
+
+        addFormat((const CGLPixelFormatAttribute*)anAttribs.data());
+      }
+    }
+  }
+
+  std::cout << "\n[" << PlatformName() << "] " << aFormats.size() << " CGL Visuals\n";
+  if (!theIsVerbose)
+  {
+    std::cout << "    visual   x   bf lv rg d st  colorbuffer  sr ax dp st accumbuffer  ms  sw cav\n"
+                 "  id  dep cl sp  sz l  ci b ro  r  g  b  a F gb bf th cl  r  g  b  a ns b ap eat\n"
+                 "-----------------------------------------------------------------------------\n";
+  }
+
+  int aFormatIndex = 0;
+  for (const FormatInfo& aFormatIter : aFormats)
+  {
+    if (!theIsVerbose)
+    {
+      const auto getAttrib = [&aFormatIter](CGLPixelFormatAttribute theEnum, GLint theDef = 0) -> GLint
+      {
+        const auto aVal = aFormatIter.find(theEnum);
+        return aVal != aFormatIter.cend() ? aVal->second : theDef;
+      };
+
+      const GLint aColorSize = getAttrib(kCGLPFAColorSize);
+      std::cout << "0x" << std::hex << std::setw(3) << std::setfill('0') << aFormatIndex++ << std::dec << std::setfill(' ') << " ";
+
+      // color buffer depth
+      printInt3d(aColorSize);
+
+      const bool isWindow  = getAttrib(kCGLPFAWindow)  != 0;
+      const bool isPBuffer = getAttrib(kCGLPFAPBuffer) != 0 || getAttrib(kCGLPFARemotePBuffer) != 0;
+      if (isWindow && isPBuffer)
+        std::cout << "wb ";
+      else if (isWindow)
+        std::cout << "wn ";
+      else if (isPBuffer)
+        std::cout << "bm ";
+      else
+        std::cout << " . ";
+
+      // x sp
+      std::cout << " . ";
+
+      // color buffer size
+      printInt3d(aColorSize);
+      // number of over/underlays
+      std::cout << " . ";
+
+      const bool isRgba = true;
+      std::cout << " " << (isRgba ? "r" : "c") << " "
+                <<  (getAttrib(kCGLPFADoubleBuffer) != 0 ? 'y' : '.') << " "
+                << " " << (getAttrib(kCGLPFAStereo) != 0 ? 'y' : '.') << " ";
+
+      int anRgbaBits[4] = {-1, -1, -1, getAttrib(kCGLPFAAlphaSize, -1)};
+      if (aColorSize == 32 || anRgbaBits[3] == 8)
+        anRgbaBits[0] = anRgbaBits[1] = anRgbaBits[2] = 8;
+      else if (aColorSize == 64 || anRgbaBits[3] == 16)
+        anRgbaBits[0] = anRgbaBits[1] = anRgbaBits[2] = 16;
+      else if (aColorSize == 128 || anRgbaBits[3] == 32)
+        anRgbaBits[0] = anRgbaBits[1] = anRgbaBits[2] = 32;
+
+      printInt2d(anRgbaBits[0]);
+      printInt2d(anRgbaBits[1]);
+      printInt2d(anRgbaBits[2]);
+      printInt2d(anRgbaBits[3]);
+
+      // float
+      if (getAttrib(kCGLPFAColorFloat) != 0)
+        std::cout << "y ";
+      else
+        std::cout << ". ";
+
+      // srgb
+      std::cout << " . ";
+
+      printInt2d(getAttrib(kCGLPFAAuxBuffers,  -1));
+      printInt2d(getAttrib(kCGLPFADepthSize,   -1));
+      printInt2d(getAttrib(kCGLPFAStencilSize, -1));
+
+      printInt2d(-1); // AccumRedBits
+      printInt2d(-1); // AccumGreemBits
+      printInt2d(-1); // AccumBlueBits
+      printInt2d(-1); // AccumAlphaBits
+
+      // ms: ns b
+      std::cout << " 0 0 ";
+
+      // swap
+      std::cout << ".  ";
+
+      // caveat
+      if (getAttrib(kCGLPFAAccelerated) != 0)
+        std::cout << "None ";
+      else
+        std::cout << "Slow ";
+
+      std::cout << "\n";
+      continue;
+    }
+
+    std::cout << "Visual ID: " << aFormatIndex << "\n";
+    for (const CglContextPixelAttr& anAttrIter : ThePixelAttributes)
+    {
+      const auto aVal = aFormatIter.find(anAttrIter.Enum);
+      if (aVal == aFormatIter.cend())
+        continue;
+
+      if (aVal->second == 0
+       && anAttrIter.Enum != kCGLPFAAccelerated)
+      {
+        continue;
+      }
+
+      std::cout << "  " << anAttrIter.Name << ": ";
+      if (anAttrIter.Enum == kCGLPFAOpenGLProfile)
+      {
+        switch (aVal->second)
+        {
+          case kCGLOGLPVersion_Legacy:   std::cout << "Legacy"; break;
+          case kCGLOGLPVersion_3_2_Core: std::cout << "Core3";  break;
+          case kCGLOGLPVersion_GL4_Core: std::cout << "Core4";  break;
+          default: std::cout << aVal->second; break;
+        }
+      }
+      else if (anAttrIter.Enum == kCGLPFARendererID)
+      {
+        const GLint aMasked = aVal->second & kCGLRendererIDMatchingMask;
+        std::cout <<   "0x" << std::hex << aVal->second << std::dec
+                  << " [0x" << std::hex << aMasked << std::dec << "]";
+        switch (aMasked)
+        {
+          case kCGLRendererGenericFloatID: std::cout << " [GenericFloat]"; break;
+          case kCGLRendererGeForce8xxxID:  std::cout << " [GeForce8]"; break;
+          case kCGLRendererGeForceID:      std::cout << " [GeForce6]"; break;
+          case 0x27f00: std::cout << " [AppleM]"; break;
+          default: break;
+        }
+      }
+      else
+      {
+        std::cout << aVal->second;
+      }
+      std::cout << "\n";
+    }
+    ++aFormatIndex;
+  }
+
+  // table footer
+  if (!theIsVerbose)
+  {
+    std::cout << "-----------------------------------------------------------------------------\n"
+                 "    visual   x   bf lv rg d st  colorbuffer  sr ax dp st accumbuffer  ms  sw cav\n"
+                 "  id  dep cl sp  sz l  ci b ro  r  g  b  a F gb bf th cl  r  g  b  a ns b ap eat\n"
+                 "-----------------------------------------------------------------------------\n\n";
+  }
 }
 
 #endif

@@ -111,6 +111,9 @@ protected:
   //! Print integer value.
   static void printInt2d(int theInt);
 
+  //! Print integer value.
+  static void printInt3d(int theInt);
+
   //! Return color buffer class
   static const char* getColorBufferClass(int theNbColorBits, int theNbRedBits);
 

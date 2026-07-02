@@ -73,6 +73,14 @@ void BaseGlContext::printInt2d(int theInt)
     std::cout << std::setw(2) << theInt << " ";
 }
 
+void BaseGlContext::printInt3d(int theInt)
+{
+  if (theInt < 0)
+    std::cout << "  . ";
+  else
+    std::cout << std::setw(3) << theInt << " ";
+}
+
 const char* BaseGlContext::getColorBufferClass(int theNbColorBits, int theNbRedBits)
 {
   if (theNbColorBits <= 8)
