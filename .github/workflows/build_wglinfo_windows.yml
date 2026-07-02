@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        arch: [x86_64, x86, arm64, arm32]
+        arch: [x86_64, x86, arm64]
         include:
           - os: windows-latest
             arch: x86_64
@@ -18,8 +18,6 @@ jobs:
             arch: x86
           - os: windows-11-arm
             arch: arm64
-          - os: windows-latest
-            arch: arm32
     runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout repository
