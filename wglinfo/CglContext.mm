@@ -296,62 +296,92 @@ void CglContext::PrintVisuals(bool theIsVerbose)
     CGLDestroyPixelFormat(aFormat);
   };
 
+  // accelerated or software implementation
   for (int anAccel = 1; anAccel >= 0; --anAccel)
   {
-    for (int aColor : {128, 64, 0})
+    // 128 for float
+    // 164 for half-float
+    // 32  for rgba8
+    // 30 & 24 & 16 are never returned -> 32 is returned instead
+    for (int aColor : {128, 64, 32, 30, 24, 16})
     {
-      for (int aProf = 4; aProf >= 2; --aProf)
+      // 32 for float
+      // 16 for half-float
+      // 8  for rgba8
+      // 2  for rgb30_a2
+      // 0  alpha is never returned -> 8 is returned instead
+      for (int anAlpha : {2, 8, 0})
       {
-        std::array<int, 32> anAttribs = {};
-        int aLastAttrib = 0;
-
-        //anAttribs[aLastAttrib++] = kCGLPFAMinimumPolicy;
-        //anAttribs[aLastAttrib++] = kCGLPFAClosestPolicy;
-
-        if (aColor >= 64)
+        // 32 corresponds to float?
+        // 24 & 16 depth are never returned
+        // 0  to disable depth (but should be combined with 0 stencil!)
+        for (int aDepth : {32, 24, 16, 0})
         {
-          // half-float or 32-bit float format
-          anAttribs[aLastAttrib++] = kCGLPFAColorFloat;
-          anAttribs[aLastAttrib++] = kCGLPFAColorSize;
-          anAttribs[aLastAttrib++] = aColor;
+          // 8 normal stencil
+          // 0 to disable stencil
+          for (int aStencil : {8, 0})
+          {
+            // OpenGL 4   Core Profile
+            // OpenGL 3.2 Core Profile
+            // OpenGL 2.1 Legacy (very outdated)
+            for (int aProf = 4; aProf >= 2; --aProf)
+            {
+              std::array<int, 32> anAttribs = {};
+              int aLastAttrib = 0;
+
+              //anAttribs[aLastAttrib++] = kCGLPFAMinimumPolicy;
+              //anAttribs[aLastAttrib++] = kCGLPFAClosestPolicy;
+
+              if (aColor >= 64)
+              {
+                // half-float or 32-bit float format
+                anAttribs[aLastAttrib++] = kCGLPFAColorFloat;
+                anAttribs[aLastAttrib++] = kCGLPFAColorSize;
+                anAttribs[aLastAttrib++] = aColor;
+              }
+              else
+              {
+                // this doesn't make any difference - 32 bit format is always returned
+                anAttribs[aLastAttrib++] = kCGLPFAColorSize;
+                anAttribs[aLastAttrib++] = aColor;
+              }
+
+              anAttribs[aLastAttrib++] = kCGLPFAAlphaSize;
+              anAttribs[aLastAttrib++] = anAlpha;
+
+              // this doesn't make any difference - 32 bit depth is always returned for any non-zero input
+              anAttribs[aLastAttrib++] = kCGLPFADepthSize;
+              anAttribs[aLastAttrib++] = aDepth;
+
+              anAttribs[aLastAttrib++] = kCGLPFAStencilSize;
+              anAttribs[aLastAttrib++] = aStencil;
+
+              anAttribs[aLastAttrib++] = kCGLPFADoubleBuffer;
+
+              if (anAccel == 1)
+              {
+                anAttribs[aLastAttrib++] = kCGLPFAAccelerated;
+              }
+              else
+              {
+                anAttribs[aLastAttrib++] = kCGLPFARendererID;
+                anAttribs[aLastAttrib++] = kCGLRendererGenericFloatID;
+              }
+
+              // obsolete, modern macOS doesn't support it
+              //anAttribs[aLastAttrib++] = kCGLPFAStereo;
+
+              if (aProf != 2)
+              {
+                anAttribs[aLastAttrib++] = kCGLPFAOpenGLProfile;
+                //kCGLOGLPVersion_Legacy
+                anAttribs[aLastAttrib++] = aProf == 4 ? kCGLOGLPVersion_GL4_Core : kCGLOGLPVersion_3_2_Core;
+              }
+
+              addFormat((const CGLPixelFormatAttribute*)anAttribs.data());
+            }
+          }
         }
-        else if (aColor != 0)
-        {
-          // this doesn't make any difference on modern macOS - 32 bit format is always returned
-          anAttribs[aLastAttrib++] = kCGLPFAColorSize;
-          anAttribs[aLastAttrib++] = aColor;
-        }
-
-        // this doesn't make any difference on modern macOS - 32 bit depth is always returned
-        anAttribs[aLastAttrib++] = kCGLPFADepthSize;
-        anAttribs[aLastAttrib++] = 24;
-
-        anAttribs[aLastAttrib++] = kCGLPFAStencilSize;
-        anAttribs[aLastAttrib++] = 8;
-
-        anAttribs[aLastAttrib++] = kCGLPFADoubleBuffer;
-
-        if (anAccel == 1)
-        {
-          anAttribs[aLastAttrib++] = kCGLPFAAccelerated;
-        }
-        else
-        {
-          anAttribs[aLastAttrib++] = kCGLPFARendererID;
-          anAttribs[aLastAttrib++] = kCGLRendererGenericFloatID;
-        }
-
-        // obsolete, modern macOS doesn't support it
-        //anAttribs[aLastAttrib++] = kCGLPFAStereo;
-
-        if (aProf != 2)
-        {
-          anAttribs[aLastAttrib++] = kCGLPFAOpenGLProfile;
-          //kCGLOGLPVersion_Legacy
-          anAttribs[aLastAttrib++] = aProf == 4 ? kCGLOGLPVersion_GL4_Core : kCGLOGLPVersion_3_2_Core;
-        }
-
-        addFormat((const CGLPixelFormatAttribute*)anAttribs.data());
       }
     }
   }
@@ -367,19 +397,29 @@ void CglContext::PrintVisuals(bool theIsVerbose)
   int aFormatIndex = 0;
   for (const FormatInfo& aFormatIter : aFormats)
   {
+    const auto getAttrib = [&aFormatIter](CGLPixelFormatAttribute theEnum, GLint theDef = 0) -> GLint
+    {
+      const auto aVal = aFormatIter.find(theEnum);
+      return aVal != aFormatIter.cend() ? aVal->second : theDef;
+    };
+
+    // RGBA
+    const int aColorSize  = getAttrib(kCGLPFAColorSize);
+    const int anAlphaSize = getAttrib(kCGLPFAAlphaSize);
+    const int aRedBits    = (aColorSize - anAlphaSize) / 3;
+
     if (!theIsVerbose)
     {
-      const auto getAttrib = [&aFormatIter](CGLPixelFormatAttribute theEnum, GLint theDef = 0) -> GLint
-      {
-        const auto aVal = aFormatIter.find(theEnum);
-        return aVal != aFormatIter.cend() ? aVal->second : theDef;
-      };
 
-      const GLint aColorSize = getAttrib(kCGLPFAColorSize);
       std::cout << "0x" << std::hex << std::setw(3) << std::setfill('0') << aFormatIndex++ << std::dec << std::setfill(' ') << " ";
 
-      // color buffer depth
-      printInt3d(aColorSize);
+      // color depth excluding alpha
+      if (anAlphaSize == 2 && aColorSize == 32)
+        printInt3d(30);
+      else if (anAlphaSize == 8 && aColorSize == 32)
+        printInt3d(24);
+      else
+        printInt3d(aColorSize);
 
       const bool isWindow  = getAttrib(kCGLPFAWindow)  != 0;
       const bool isPBuffer = getAttrib(kCGLPFAPBuffer) != 0 || getAttrib(kCGLPFARemotePBuffer) != 0;
@@ -405,18 +445,10 @@ void CglContext::PrintVisuals(bool theIsVerbose)
                 <<  (getAttrib(kCGLPFADoubleBuffer) != 0 ? 'y' : '.') << " "
                 << " " << (getAttrib(kCGLPFAStereo) != 0 ? 'y' : '.') << " ";
 
-      int anRgbaBits[4] = {-1, -1, -1, getAttrib(kCGLPFAAlphaSize, -1)};
-      if (aColorSize == 32 || anRgbaBits[3] == 8)
-        anRgbaBits[0] = anRgbaBits[1] = anRgbaBits[2] = 8;
-      else if (aColorSize == 64 || anRgbaBits[3] == 16)
-        anRgbaBits[0] = anRgbaBits[1] = anRgbaBits[2] = 16;
-      else if (aColorSize == 128 || anRgbaBits[3] == 32)
-        anRgbaBits[0] = anRgbaBits[1] = anRgbaBits[2] = 32;
-
-      printInt2d(anRgbaBits[0]);
-      printInt2d(anRgbaBits[1]);
-      printInt2d(anRgbaBits[2]);
-      printInt2d(anRgbaBits[3]);
+      printInt2d(aRedBits);
+      printInt2d(aRedBits);
+      printInt2d(aRedBits);
+      printInt2d(anAlphaSize);
 
       // float
       if (getAttrib(kCGLPFAColorFloat) != 0)
@@ -453,6 +485,35 @@ void CglContext::PrintVisuals(bool theIsVerbose)
     }
 
     std::cout << "Visual ID: " << aFormatIndex << "\n";
+
+    std::string aRendTarget;
+    if (getAttrib(kCGLPFAWindow) != 0)
+      aRendTarget += "|window";
+
+    if (getAttrib(kCGLPFAPBuffer) != 0)
+      aRendTarget += "|PBuffer";
+
+    if (getAttrib(kCGLPFARemotePBuffer) != 0)
+      aRendTarget += "|remotePBuffer";
+
+    if (!aRendTarget.empty())
+      aRendTarget = aRendTarget.substr(1);
+    else
+      aRendTarget = ".";
+
+    std::cout << "    color: R" << aRedBits << "G" << aRedBits << "B" << aRedBits << "A" << anAlphaSize
+              << " (" << getColorBufferClass(aColorSize, aRedBits) << ", " << aColorSize << ")"
+              << " depth: " << getAttrib(kCGLPFADepthSize) << " stencil: " << getAttrib(kCGLPFAStencilSize) << "\n"
+              << "    doubleBuffer: " << (getAttrib(kCGLPFADoubleBuffer) != 0)
+              << " stereo: " << (getAttrib(kCGLPFAStereo) != 0) << "\n"
+              << "    renderTarget: " << aRendTarget << " caveat: " << (getAttrib(kCGLPFAAccelerated) == 0 ? "slow " : "none ")
+              << "\n"
+              << "    profile: "
+              << (getAttrib(kCGLPFAOpenGLProfile) == kCGLOGLPVersion_GL4_Core ? "OpenGL 4 Core Profile " : "")
+              << (getAttrib(kCGLPFAOpenGLProfile) == kCGLOGLPVersion_3_2_Core ? "OpenGL 3 Core Profile " : "")
+              << (getAttrib(kCGLPFAOpenGLProfile) == kCGLOGLPVersion_Legacy   ? "OpenGL 2 Legacy " : "")
+              << "\n";
+
     for (const CglContextPixelAttr& anAttrIter : ThePixelAttributes)
     {
       const auto aVal = aFormatIter.find(anAttrIter.Enum);
@@ -462,10 +523,25 @@ void CglContext::PrintVisuals(bool theIsVerbose)
       if (aVal->second == 0
        && anAttrIter.Enum != kCGLPFAAccelerated)
       {
-        continue;
+        continue; // just skip zero values
       }
 
-      std::cout << "  " << anAttrIter.Name << ": ";
+      if (anAttrIter.Enum == kCGLPFAColorSize
+       || anAttrIter.Enum == kCGLPFAAlphaSize
+       || anAttrIter.Enum == kCGLPFADepthSize
+       || anAttrIter.Enum == kCGLPFAStencilSize
+       || anAttrIter.Enum == kCGLPFADoubleBuffer
+       || anAttrIter.Enum == kCGLPFAAccelerated
+       || anAttrIter.Enum == kCGLPFAOpenGLProfile
+       || anAttrIter.Enum == kCGLPFAWindow
+       || anAttrIter.Enum == kCGLPFAPBuffer
+       || anAttrIter.Enum == kCGLPFARemotePBuffer)
+      {
+        continue; // displayed on top using special format
+      }
+
+      std::cout << "    " << anAttrIter.Name << ": ";
+
       if (anAttrIter.Enum == kCGLPFAOpenGLProfile)
       {
         switch (aVal->second)

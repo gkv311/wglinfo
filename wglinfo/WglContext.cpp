@@ -418,7 +418,7 @@ void WglContext::PrintVisuals(bool theIsVerbose)
 
       const char* rendertarget = "bitmap";
       if ((aFormat.dwFlags & (PFD_DRAW_TO_WINDOW | PFD_DRAW_TO_BITMAP)) == (PFD_DRAW_TO_WINDOW | PFD_DRAW_TO_BITMAP))
-        rendertarget = "window/bitmap";
+        rendertarget = "window|bitmap";
       else if ((aFormat.dwFlags & PFD_DRAW_TO_WINDOW) != 0)
         rendertarget = "window";
 
