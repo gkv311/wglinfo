@@ -5,9 +5,10 @@
 #include "EglGlContext.h"
 
 #include <cstring>
-#include <string>
 #include <iomanip>
 #include <iostream>
+#include <vector>
+#include <string>
 
 #if defined(__GNUC__) && !defined(__INTEL_COMPILER) && !defined(__clang__)
   #if (__GNUC__ > 8) || ((__GNUC__ == 8) && (__GNUC_MINOR__ >= 1))
@@ -482,42 +483,34 @@ void EglGlContext::PrintVisuals(bool theIsVerbose)
 
   struct EGLConfigAttribs
   {
-    EGLint ConfigId;
-    EGLint ConfigCaveat;
-    EGLint RenderbableType;
-    EGLint BufferType;
-    EGLint SurfaceType;
-    EGLint ColorSize;
-    EGLint RedSize;
-    EGLint GreenSize;
-    EGLint BlueSize;
-    EGLint AlphaSize;
-    EGLint DepthSize;
-    EGLint StencilSize;
+    EGLint ConfigId = 0;
+    EGLint ConfigCaveat = 0;
+    EGLint RenderbableType = 0;
+    EGLint BufferType = 0;
+    EGLint SurfaceType = 0;
+    EGLint ColorSize = 0;
+    EGLint RedSize = 0;
+    EGLint GreenSize = 0;
+    EGLint BlueSize = 0;
+    EGLint AlphaSize = 0;
+    EGLint DepthSize = 0;
+    EGLint StencilSize = 0;
   };
 
   EGLint aNbConfigs = 0;
   eglGetConfigs(myEglDisp, NULL, 0, &aNbConfigs);
-  EGLConfig* aConfigs = new EGLConfig[aNbConfigs];
-  memset(aConfigs, 0, sizeof(EGLConfig) * aNbConfigs);
-  if (eglGetConfigs(myEglDisp, aConfigs, aNbConfigs, &aNbConfigs) != EGL_TRUE)
-  {
-    delete[] aConfigs;
+  std::vector<EGLConfig> aConfigs(aNbConfigs);
+  if (eglGetConfigs(myEglDisp, aConfigs.data(), aNbConfigs, &aNbConfigs) != EGL_TRUE)
     return;
-  }
 
   std::cout << "\n[" << PlatformName() << "] " << aNbConfigs << " EGL Configs\n";
   if (!theIsVerbose)
-  {
-    std::cout << "    visual  x  bf lv rg d st  r  g  b a  ax dp st accum buffs  ms \n"
-                 "  id dep cl sp sz l  ci b ro sz sz sz sz bf th cl  r  g  b  a ns b\n"
-                 "------------------------------------------------------------------\n";
-  }
+    VisualInfo::PrintTableHeader(true);
+
   for (int aCfgIter = 0; aCfgIter < aNbConfigs; ++aCfgIter)
   {
     const EGLConfig aCfg = aConfigs[aCfgIter];
-    EGLConfigAttribs anAttribs;
-    memset(&anAttribs, 0, sizeof(EGLConfigAttribs));
+    EGLConfigAttribs anAttribs = {};
     eglGetConfigAttrib(myEglDisp, aCfg, EGL_CONFIG_ID, &anAttribs.ConfigId);
     eglGetConfigAttrib(myEglDisp, aCfg, EGL_CONFIG_CAVEAT, &anAttribs.ConfigCaveat);
     eglGetConfigAttrib(myEglDisp, aCfg, EGL_RENDERABLE_TYPE, &anAttribs.RenderbableType);
@@ -545,42 +538,52 @@ void EglGlContext::PrintVisuals(bool theIsVerbose)
       continue;
     }
 
-    std::cout << "0x" << std::hex << std::setw(3) << std::setfill('0') << aCfgIter << std::dec << std::setfill(' ') << " ";
-    std::cout << std::setw(2) << (int)anAttribs.ColorSize << " ";
+    VisualInfo anInfo;
+    anInfo.ConfigId = aCfgIter;
 
-    std::cout << ((anAttribs.SurfaceType & EGL_WINDOW_BIT) != 0
-                  ? "wn "
-                  : ((anAttribs.SurfaceType & EGL_PIXMAP_BIT) != 0
-                      ? "bm "
-                      : ".  "));
+    anInfo.ConfigCaveat = VisualInfo::Caveat_None;
+    if ((anAttribs.ConfigCaveat & EGL_SLOW_CONFIG) != 0)
+      anInfo.ConfigCaveat = VisualInfo::Caveat(anInfo.ConfigCaveat | VisualInfo::Caveat_Slow);
+    if ((anAttribs.ConfigCaveat & EGL_NON_CONFORMANT_CONFIG) != 0)
+      anInfo.ConfigCaveat = VisualInfo::Caveat(anInfo.ConfigCaveat | VisualInfo::Caveat_NonConformant);
 
-    std::cout << " . " << std::setw(2) << (int)anAttribs.ColorSize << " ";
-    std::cout << " . ";
-    std::cout << " " << (anAttribs.BufferType == EGL_RGB_BUFFER ? "r" : "l") << " "
-      << '.' << " "
-      << " " << '.' << " ";
-    printInt2d(anAttribs.RedSize   && anAttribs.BufferType == EGL_RGB_BUFFER ? (int)anAttribs.RedSize : -1);
-    printInt2d(anAttribs.GreenSize && anAttribs.BufferType == EGL_RGB_BUFFER ? (int)anAttribs.GreenSize : -1);
-    printInt2d(anAttribs.BlueSize  && anAttribs.BufferType == EGL_RGB_BUFFER ? (int)anAttribs.BlueSize : -1);
-    printInt2d(anAttribs.AlphaSize && anAttribs.BufferType == EGL_RGB_BUFFER ? (int)anAttribs.AlphaSize : -1);
-    printInt2d(-1);
-    printInt2d(anAttribs.DepthSize ? (int)anAttribs.DepthSize : -1);
-    printInt2d(anAttribs.StencilSize ? (int)anAttribs.StencilSize : -1);
-    printInt2d(-1);
-    printInt2d(-1);
-    printInt2d(-1);
-    printInt2d(-1);
+    if (anAttribs.BufferType == EGL_LUMINANCE_BUFFER)
+      anInfo.BufferType = VisualInfo::ColorBuffer_Luminance;
+    else if (anAttribs.BufferType == EGL_RGB_BUFFER)
+      anInfo.BufferType = VisualInfo::ColorBuffer_Rgba;
 
-    std::cout << " . .\n";
+    if ((anAttribs.SurfaceType & EGL_WINDOW_BIT) != 0)
+      anInfo.SurfaceType = VisualInfo::Surface(anInfo.SurfaceType | VisualInfo::Surface_Window);
+    if ((anAttribs.SurfaceType & EGL_PBUFFER_BIT) != 0)
+      anInfo.SurfaceType = VisualInfo::Surface(anInfo.SurfaceType | VisualInfo::Surface_PBuffer);
+    if ((anAttribs.SurfaceType & EGL_PIXMAP_BIT) != 0)
+      anInfo.SurfaceType = VisualInfo::Surface(anInfo.SurfaceType | VisualInfo::Surface_Pixmap);
+
+    anInfo.ColorDepth      = 0;
+    anInfo.ColorBufferSize = (int)anAttribs.ColorSize;
+    anInfo.RedSize         = (int)anAttribs.RedSize;
+    anInfo.GreenSize       = (int)anAttribs.GreenSize;
+    anInfo.BlueSize        = (int)anAttribs.BlueSize;
+    anInfo.AlphaSize       = (int)anAttribs.AlphaSize;
+    anInfo.DepthSize       = (int)anAttribs.DepthSize;
+    anInfo.StencilSize     = (int)anAttribs.StencilSize;
+
+    //
+    anInfo.NbSwapBuffers = 1;
+    anInfo.IsStereoBuffer = false;
+    anInfo.IsSRgb = false;
+
+    // dummy
+    anInfo.NbAuxBuffers   = 0;
+    anInfo.AccumRedSize   = 0;
+    anInfo.AccumGreenSize = 0;
+    anInfo.AccumBlueSize  = 0;
+    anInfo.AccumAlphaSize = 0;
+
+    anInfo.PrintTableLine();
   }
-  delete[] aConfigs;
 
   // table footer
   if (!theIsVerbose)
-  {
-    std::cout << "------------------------------------------------------------------\n"
-                 "    visual  x  bf lv rg d st  r  g  b a  ax dp st accum buffs  ms \n"
-                 "  id dep cl sp sz l  ci b ro sz sz sz sz bf th cl  r  g  b  a ns b\n"
-                 "------------------------------------------------------------------\n\n";
-  }
+    VisualInfo::PrintTableHeader(false);
 }

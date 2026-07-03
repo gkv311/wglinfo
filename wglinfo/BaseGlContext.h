@@ -108,8 +108,70 @@ protected:
 
 protected:
 
+  //! Visual info.
+  struct VisualInfo
+  {
+    int ConfigId = 0;
+
+    enum Caveat
+    {
+      Caveat_None = 0x00,
+      Caveat_Slow = 0x01,
+      Caveat_NonConformant = 0x02
+    };
+    Caveat ConfigCaveat = Caveat_None;
+
+    //int RenderbableType;
+
+    enum ColorBuffer
+    {
+      ColorBuffer_ColorIndex,
+      ColorBuffer_Luminance,
+      ColorBuffer_Rgba,
+    };
+    ColorBuffer BufferType = ColorBuffer_Rgba;
+    bool        IsColorFloat = false;
+
+    enum Surface
+    {
+      Surface_None    = 0x00,
+      Surface_Window  = 0x01,
+      Surface_Pixmap  = 0x02,
+      Surface_PBuffer = 0x04,
+      Surface_PBufferRemote = 0x08,
+    };
+    Surface SurfaceType = Surface_None;
+
+    int ColorDepth = 0;
+    int ColorBufferSize = 0;
+    int RedSize = 0;
+    int GreenSize = 0;
+    int BlueSize = 0;
+    int AlphaSize = 0;
+    int DepthSize = 0;
+    int StencilSize = 0;
+
+    int  NbSwapBuffers = 1;
+    bool IsStereoBuffer = false;
+    bool IsSRgb = false;
+
+    int NbAuxBuffers = 0;
+    int AccumRedSize = 0;
+    int AccumGreenSize = 0;
+    int AccumBlueSize = 0;
+    int AccumAlphaSize = 0;
+
+  public:
+    static void PrintTableHeader(bool theHeader);
+
+    void PrintTableLine();
+
+  };
+
+protected:
+
   //! Print integer value.
-  static void printInt2d(int theInt);
+  static void printInt2d(int theInt, int theNA = -1);
 
   //! Print integer value.
   static void printInt3d(int theInt);

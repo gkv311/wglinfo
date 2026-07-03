@@ -65,9 +65,9 @@ void BaseGlContext::SoftMesaSentry::Reset()
 #endif
 }
 
-void BaseGlContext::printInt2d(int theInt)
+void BaseGlContext::printInt2d(int theInt, int theNA)
 {
-  if (theInt < 0)
+  if (theInt <= theNA)
     std::cout << " . ";
   else
     std::cout << std::setw(2) << theInt << " ";
@@ -89,6 +89,126 @@ const char* BaseGlContext::getColorBufferClass(int theNbColorBits, int theNbRedB
     return "DeepColor";
 
   return "TrueColor";
+}
+
+void BaseGlContext::VisualInfo::PrintTableHeader(bool theHeader)
+{
+  if (!theHeader)
+  {
+    std::cout << "-----------------------------------------------------------------------------\n";
+  }
+  {
+    std::cout << "    visual   x   bf lv rg d st  colorbuffer  sr ax dp st accumbuffer  ms  sw cav\n"
+                 "  id  dep cl sp  sz l  ci b ro  r  g  b  a F gb bf th cl  r  g  b  a ns b ap eat\n"
+                 "-----------------------------------------------------------------------------\n";
+  }
+  if (!theHeader)
+    std::cout << "\n";
+}
+
+void BaseGlContext::VisualInfo::PrintTableLine()
+{
+  std::cout << "0x" << std::hex << std::setw(3) << std::setfill('0') << ConfigId << std::dec << std::setfill(' ')
+            << " ";
+
+  if (ColorDepth == 0 && ColorBufferSize != 0 && BufferType == ColorBuffer_Rgba)
+  {
+    // color depth excluding alpha
+    if (AlphaSize == 2 && ColorBufferSize == 32)
+      printInt3d(30);
+    else if (AlphaSize == 8 && ColorBufferSize == 32)
+      printInt3d(24);
+    else
+      printInt3d(ColorBufferSize);
+  }
+  else
+  {
+    printInt3d(ColorDepth);
+  }
+
+  if ((SurfaceType & Surface_Window) != 0)
+  {
+    if ((SurfaceType & Surface_Pixmap) != 0 || (SurfaceType & Surface_PBuffer) != 0
+        || (SurfaceType & Surface_PBufferRemote) != 0)
+      std::cout << "wb ";
+    else
+      std::cout << "wn ";
+  }
+  else if ((SurfaceType & Surface_Pixmap) != 0 || (SurfaceType & Surface_PBuffer) != 0
+           || (SurfaceType & Surface_PBufferRemote) != 0)
+  {
+    std::cout << "bm ";
+  }
+  else
+  {
+    std::cout << " . ";
+  }
+
+  // x sp
+  std::cout << " . ";
+
+  // color buffer size
+  printInt3d(ColorBufferSize);
+
+  // number of over/underlays
+  std::cout << " . ";
+
+  // color type
+  switch (BufferType)
+  {
+    case ColorBuffer_ColorIndex: std::cout << 'i'; break;
+    case ColorBuffer_Luminance:  std::cout << 'l'; break;
+    case ColorBuffer_Rgba:       std::cout << 'r'; break;
+  }
+  std::cout << "  ";
+
+  // double buffer
+  std::cout << (NbSwapBuffers > 0 ? 'y' : '.') << " ";
+
+  // stereo buffer
+  std::cout << (IsStereoBuffer ? 'y' : '.') << "  ";
+
+  // RGBA components bits
+  printInt2d(RedSize,   BufferType != ColorBuffer_Rgba ? 0 : -1);
+  printInt2d(GreenSize, BufferType != ColorBuffer_Rgba ? 0 : -1);
+  printInt2d(BlueSize,  BufferType != ColorBuffer_Rgba ? 0 : -1);
+  printInt2d(AlphaSize, BufferType != ColorBuffer_Rgba ? 0 : -1);
+  // float
+  std::cout << (IsColorFloat ? 'y' : '.') << " ";
+  // srgb
+  std::cout << " " << (IsSRgb ? 'y' : '.') << " ";
+
+  printInt2d(NbAuxBuffers, 0);
+  printInt2d(DepthSize);
+  printInt2d(StencilSize);
+
+  // accumulation buffer components bits
+  printInt2d(AccumRedSize,   0);
+  printInt2d(AccumGreenSize, 0);
+  printInt2d(AccumBlueSize,  0);
+  printInt2d(AccumAlphaSize, 0);
+
+  // ms: ns b
+  std::cout << " 0 0 ";
+
+  // swap
+  std::cout << ".  ";
+
+  // caveat
+  if (ConfigCaveat == 0)
+  {
+    std::cout << "None ";
+  }
+  else
+  {
+    if ((ConfigCaveat & Caveat_Slow) != 0)
+      std::cout << "Slow ";
+
+    if ((ConfigCaveat & Caveat_NonConformant) != 0)
+      std::cout << "NonConformant ";
+  }
+
+  std::cout << "\n";
 }
 
 static const int THE_LINE_LEN = 80;
