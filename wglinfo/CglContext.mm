@@ -388,11 +388,7 @@ void CglContext::PrintVisuals(bool theIsVerbose)
 
   std::cout << "\n[" << PlatformName() << "] " << aFormats.size() << " CGL Visuals\n";
   if (!theIsVerbose)
-  {
-    std::cout << "    visual   x   bf lv rg d st  colorbuffer  sr ax dp st accumbuffer  ms  sw cav\n"
-                 "  id  dep cl sp  sz l  ci b ro  r  g  b  a F gb bf th cl  r  g  b  a ns b ap eat\n"
-                 "-----------------------------------------------------------------------------\n";
-  }
+    VisualInfo::PrintTableHeader(true);
 
   int aFormatIndex = 0;
   for (const FormatInfo& aFormatIter : aFormats)
@@ -410,77 +406,54 @@ void CglContext::PrintVisuals(bool theIsVerbose)
 
     if (!theIsVerbose)
     {
+      VisualInfo anInfo;
+      anInfo.ConfigId = aFormatIndex++;
 
-      std::cout << "0x" << std::hex << std::setw(3) << std::setfill('0') << aFormatIndex++ << std::dec << std::setfill(' ') << " ";
+      anInfo.ConfigCaveat = VisualInfo::Caveat_None;
+      if (getAttrib(kCGLPFAAccelerated) == 0)
+        anInfo.ConfigCaveat = VisualInfo::Caveat(anInfo.ConfigCaveat | VisualInfo::Caveat_Slow);
 
-      // color depth excluding alpha
-      if (anAlphaSize == 2 && aColorSize == 32)
-        printInt3d(30);
-      else if (anAlphaSize == 8 && aColorSize == 32)
-        printInt3d(24);
-      else
-        printInt3d(aColorSize);
+      anInfo.BufferType = VisualInfo::ColorBuffer_Rgba;
 
-      const bool isWindow  = getAttrib(kCGLPFAWindow)  != 0;
-      const bool isPBuffer = getAttrib(kCGLPFAPBuffer) != 0 || getAttrib(kCGLPFARemotePBuffer) != 0;
-      if (isWindow && isPBuffer)
-        std::cout << "wb ";
-      else if (isWindow)
-        std::cout << "wn ";
-      else if (isPBuffer)
-        std::cout << "bm ";
-      else
-        std::cout << " . ";
+      if (getAttrib(kCGLPFAWindow) != 0)
+        anInfo.SurfaceType = VisualInfo::Surface(anInfo.SurfaceType | VisualInfo::Surface_Window);
+      if (getAttrib(kCGLPFAPBuffer) != 0)
+        anInfo.SurfaceType = VisualInfo::Surface(anInfo.SurfaceType | VisualInfo::Surface_PBuffer);
+      if (getAttrib(kCGLPFARemotePBuffer) != 0)
+        anInfo.SurfaceType = VisualInfo::Surface(anInfo.SurfaceType | VisualInfo::Surface_PBufferRemote);
 
-      // x sp
-      std::cout << " . ";
+      anInfo.ColorDepth      = 0;
+      anInfo.ColorBufferSize = aColorSize;
+      anInfo.RedSize         = aRedBits;
+      anInfo.GreenSize       = aRedBits;
+      anInfo.BlueSize        = aRedBits;
+      anInfo.AlphaSize       = anAlphaSize;
+      anInfo.DepthSize       = getAttrib(kCGLPFADepthSize);
+      anInfo.StencilSize     = getAttrib(kCGLPFAStencilSize);
 
-      // color buffer size
-      printInt3d(aColorSize);
-      // number of over/underlays
-      std::cout << " . ";
+      anInfo.NbSwapBuffers = 1;
+      if (getAttrib(kCGLPFATripleBuffer) != 0)
+        anInfo.NbSwapBuffers = 3;
+      else if (getAttrib(kCGLPFADoubleBuffer) != 0)
+        anInfo.NbSwapBuffers = 2;
 
-      const bool isRgba = true;
-      std::cout << " " << (isRgba ? "r" : "c") << " "
-                <<  (getAttrib(kCGLPFADoubleBuffer) != 0 ? 'y' : '.') << " "
-                << " " << (getAttrib(kCGLPFAStereo) != 0 ? 'y' : '.') << " ";
+      anInfo.IsStereoBuffer = getAttrib(kCGLPFAStereo) != 0;
+      anInfo.IsColorFloat = getAttrib(kCGLPFAColorFloat) != 0;
+      // probably the property is meaningless, as colorspace is assigned to window dynamically
+      // [NSWindow setColorSpace: [NSColorSpace sRGBColorSpace]];
+      anInfo.IsSRgb = !anInfo.IsColorFloat;
 
-      printInt2d(aRedBits);
-      printInt2d(aRedBits);
-      printInt2d(aRedBits);
-      printInt2d(anAlphaSize);
+      // dummy
+      anInfo.NbAuxBuffers   = getAttrib(kCGLPFAAuxBuffers);
+      anInfo.AccumRedSize   = getAttrib(kCGLPFAAccumSize) / 4;
+      anInfo.AccumGreenSize = getAttrib(kCGLPFAAccumSize) / 4;
+      anInfo.AccumBlueSize  = getAttrib(kCGLPFAAccumSize) / 4;
+      anInfo.AccumAlphaSize = getAttrib(kCGLPFAAccumSize) / 4;
 
-      // float
-      if (getAttrib(kCGLPFAColorFloat) != 0)
-        std::cout << "y ";
-      else
-        std::cout << ". ";
+      anInfo.NbSampleBuffers = getAttrib(kCGLPFASampleBuffers);
+      anInfo.NbSamples       = getAttrib(kCGLPFASamples);
 
-      // srgb
-      std::cout << " . ";
-
-      printInt2d(getAttrib(kCGLPFAAuxBuffers,  -1));
-      printInt2d(getAttrib(kCGLPFADepthSize,   -1));
-      printInt2d(getAttrib(kCGLPFAStencilSize, -1));
-
-      printInt2d(-1); // AccumRedBits
-      printInt2d(-1); // AccumGreemBits
-      printInt2d(-1); // AccumBlueBits
-      printInt2d(-1); // AccumAlphaBits
-
-      // ms: ns b
-      std::cout << " 0 0 ";
-
-      // swap
-      std::cout << ".  ";
-
-      // caveat
-      if (getAttrib(kCGLPFAAccelerated) != 0)
-        std::cout << "None ";
-      else
-        std::cout << "Slow ";
-
-      std::cout << "\n";
+      anInfo.PrintTableLine();
       continue;
     }
 
@@ -577,12 +550,7 @@ void CglContext::PrintVisuals(bool theIsVerbose)
 
   // table footer
   if (!theIsVerbose)
-  {
-    std::cout << "-----------------------------------------------------------------------------\n"
-                 "    visual   x   bf lv rg d st  colorbuffer  sr ax dp st accumbuffer  ms  sw cav\n"
-                 "  id  dep cl sp  sz l  ci b ro  r  g  b  a F gb bf th cl  r  g  b  a ns b ap eat\n"
-                 "-----------------------------------------------------------------------------\n\n";
-  }
+    VisualInfo::PrintTableHeader(false);
 }
 
 #endif
