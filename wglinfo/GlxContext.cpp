@@ -289,6 +289,101 @@ void GlxContext::PrintGpuMemoryInfo()
 void GlxContext::PrintVisuals(bool theIsVerbose)
 {
   (void)theIsVerbose;
+
+  Display*  aDisp = (Display*)myWin.GetDisplay();
+  const int aScreen = DefaultScreen(aDisp);
+
+  int          aFBCount = 0;
+  GLXFBConfig* aFBCfgList = glXGetFBConfigs(aDisp, aScreen, &aFBCount);
+
+  std::cout << "\n[" << PlatformName() << "] " << aFBCount << " GLXFB Configs\n";
+  if (!theIsVerbose)
+    VisualInfo::PrintTableHeader(true);
+
+  std::string aGlxExt;
+  if (const char* aGlxExtRaw = glXQueryExtensionsString(aDisp, aScreen))
+    aGlxExt = aGlxExtRaw;
+
+  for (int aConfigIter = 0; aConfigIter < aFBCount; ++aConfigIter)
+  {
+    const GLXFBConfig anFBConfig = aFBCfgList[aConfigIter];
+
+    VisualInfo anInfo;
+    anInfo.ConfigId = aConfigIter;
+    glXGetFBConfigAttrib(aDisp, anFBConfig, GLX_FBCONFIG_ID,  &anInfo.ConfigId);
+
+    glXGetFBConfigAttrib(aDisp, anFBConfig, GLX_BUFFER_SIZE,  &anInfo.ColorBufferSize);
+    glXGetFBConfigAttrib(aDisp, anFBConfig, GLX_RED_SIZE,     &anInfo.RedSize);
+    glXGetFBConfigAttrib(aDisp, anFBConfig, GLX_GREEN_SIZE,   &anInfo.GreenSize);
+    glXGetFBConfigAttrib(aDisp, anFBConfig, GLX_BLUE_SIZE,    &anInfo.BlueSize);
+    glXGetFBConfigAttrib(aDisp, anFBConfig, GLX_ALPHA_SIZE,   &anInfo.AlphaSize);
+    glXGetFBConfigAttrib(aDisp, anFBConfig, GLX_DEPTH_SIZE,   &anInfo.DepthSize);
+    glXGetFBConfigAttrib(aDisp, anFBConfig, GLX_STENCIL_SIZE, &anInfo.StencilSize);
+
+    int aCaveat = 0;
+    glXGetFBConfigAttrib(aDisp, anFBConfig, GLX_CONFIG_CAVEAT, &aCaveat);
+    if (aCaveat == GLX_SLOW_CONFIG)
+      anInfo.ConfigCaveat = VisualInfo::Caveat_Slow;
+    else if (aCaveat == GLX_NON_CONFORMANT_CONFIG)
+      anInfo.ConfigCaveat = VisualInfo::Caveat_NonConformant;
+
+    int aDrawType = 0;
+    glXGetFBConfigAttrib(aDisp, anFBConfig, GLX_DRAWABLE_TYPE, &aDrawType);
+    anInfo.SurfaceType = VisualInfo::Surface_None;
+    if ((aDrawType & GLX_WINDOW_BIT) != 0)
+      anInfo.SurfaceType = VisualInfo::Surface(anInfo.SurfaceType | VisualInfo::Surface_Window);
+    if ((aDrawType & GLX_PIXMAP_BIT) != 0)
+      anInfo.SurfaceType = VisualInfo::Surface(anInfo.SurfaceType | VisualInfo::Surface_Pixmap);
+    if ((aDrawType & GLX_PBUFFER_BIT) != 0)
+      anInfo.SurfaceType = VisualInfo::Surface(anInfo.SurfaceType | VisualInfo::Surface_PBuffer);
+
+    int isRgba = 0;
+    glXGetFBConfigAttrib(aDisp, anFBConfig, GLX_RGBA, &isRgba);
+    if (isRgba != 0)
+      anInfo.BufferType = VisualInfo::ColorBuffer_Rgba;
+
+    int isDouble = 0;
+    glXGetFBConfigAttrib(aDisp, anFBConfig, GLX_DOUBLEBUFFER, &isDouble);
+    anInfo.NbSwapBuffers = isDouble != 0 ? 2 : 1;
+
+    int isStereo = 0;
+    glXGetFBConfigAttrib(aDisp, anFBConfig, GLX_STEREO, &isStereo);
+    anInfo.IsStereoBuffer = isStereo != 0;
+
+    glXGetFBConfigAttrib(aDisp, anFBConfig, GLX_AUX_BUFFERS,      &anInfo.NbAuxBuffers);
+    glXGetFBConfigAttrib(aDisp, anFBConfig, GLX_ACCUM_RED_SIZE,   &anInfo.AccumRedSize);
+    glXGetFBConfigAttrib(aDisp, anFBConfig, GLX_ACCUM_GREEN_SIZE, &anInfo.AccumGreenSize);
+    glXGetFBConfigAttrib(aDisp, anFBConfig, GLX_ACCUM_BLUE_SIZE,  &anInfo.AccumBlueSize);
+    glXGetFBConfigAttrib(aDisp, anFBConfig, GLX_ACCUM_ALPHA_SIZE, &anInfo.AccumAlphaSize);
+
+    // GLX 1.4+
+    glXGetFBConfigAttrib(aDisp, anFBConfig, GLX_SAMPLE_BUFFERS,   &anInfo.NbSampleBuffers);
+    glXGetFBConfigAttrib(aDisp, anFBConfig, GLX_SAMPLES,          &anInfo.NbSamples);
+
+    int aRendType = 0;
+    glXGetFBConfigAttrib(aDisp, anFBConfig, GLX_RENDER_TYPE, &aRendType);
+    if ((aRendType & GLX_RGBA_FLOAT_BIT_ARB) != 0 && hasExtension(aGlxExt, "GLX_ARB_fbconfig_float"))
+      anInfo.IsColorFloat = true;
+
+    if (hasExtension(aGlxExt, "GLX_EXT_framebuffer_sRGB"))
+    {
+      int isSRgb = 0;
+      glXGetFBConfigAttrib(aDisp, anFBConfig, GLX_FRAMEBUFFER_SRGB_CAPABLE_EXT, &isSRgb);
+      anInfo.IsSRgb = isSRgb != 0;
+    }
+
+    //int aVisType = 0;
+    //glXGetFBConfigAttrib(aDisp, anFBConfig, GLX_X_VISUAL_TYPE, &aVisType);
+
+    //int aLevel = 0; // positive level for overlay
+    //glXGetFBConfigAttrib(aDisp, anFBConfig, GLX_LEVEL, &aLevel);
+
+    anInfo.PrintTableLine();
+  }
+  XFree(aFBCfgList);
+
+  if (!theIsVerbose)
+    VisualInfo::PrintTableHeader(false);
 }
 
 #endif

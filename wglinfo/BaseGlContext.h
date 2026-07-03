@@ -161,6 +161,9 @@ protected:
     int AccumBlueSize = 0;
     int AccumAlphaSize = 0;
 
+    int NbSampleBuffers = 0;
+    int NbSamples = 0;
+
   public:
     static void PrintTableHeader(bool theHeader);
 

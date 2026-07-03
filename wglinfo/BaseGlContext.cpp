@@ -176,7 +176,7 @@ void BaseGlContext::VisualInfo::PrintTableLine()
   // float
   std::cout << (IsColorFloat ? 'y' : '.') << " ";
   // srgb
-  std::cout << " " << (IsSRgb ? 'y' : '.') << " ";
+  std::cout << " " << (IsSRgb ? 's' : '.') << " ";
 
   printInt2d(NbAuxBuffers, 0);
   printInt2d(DepthSize);
@@ -189,7 +189,7 @@ void BaseGlContext::VisualInfo::PrintTableLine()
   printInt2d(AccumAlphaSize, 0);
 
   // ms: ns b
-  std::cout << " 0 0 ";
+  std::cout << " " << NbSampleBuffers << " " << NbSamples << " ";
 
   // swap
   std::cout << ".  ";
