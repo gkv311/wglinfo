@@ -20,6 +20,8 @@
 *.exe
 *.dll
 bin/
+build/
+work/
 x64-Release
 Win32-Release
 x64-Debug
