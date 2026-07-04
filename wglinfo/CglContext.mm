@@ -302,14 +302,17 @@ void CglContext::PrintVisuals(bool theIsVerbose)
   {
     // 128 for float
     // 164 for half-float
-    // 32  for rgba8
-    // 30 & 24 & 16 are never returned -> 32 is returned instead
+    // 32  for R8G8B8A8
+    // 30  for R10G10B10A2 (will be returned only when requested with 2 bits for alpha!)
+    // 24 & 16 are never returned -> 32 is returned instead
+    //
+    // software implementation supports only two color formats: R8G8B8A8 and R32G32B32A32 (float)
     for (int aColor : {128, 64, 32, 30, 24, 16})
     {
       // 32 for float
-      // 16 for half-float
-      // 8  for rgba8
-      // 2  for rgb30_a2
+      // 16 for half-float (accelerated-only)
+      // 8  for R8G8B8A8
+      // 2  for R10G10B10A2 (accelerated-only)
       // 0  alpha is never returned -> 8 is returned instead
       for (int anAlpha : {2, 8, 0})
       {
@@ -318,7 +321,7 @@ void CglContext::PrintVisuals(bool theIsVerbose)
         // 0  to disable depth (but should be combined with 0 stencil!)
         for (int aDepth : {32, 24, 16, 0})
         {
-          // 8 normal stencil
+          // 8 for normal stencil
           // 0 to disable stencil
           for (int aStencil : {8, 0})
           {
