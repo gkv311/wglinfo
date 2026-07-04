@@ -22,6 +22,7 @@
 
 #include <dlfcn.h>
 
+#include <array>
 #include <iomanip>
 #include <iostream>
 #include <map>
