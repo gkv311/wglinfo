@@ -174,7 +174,7 @@ protected:
     static void PrintTableHeader(bool theHeader);
     static void PrintTableSeparator();
 
-    void PrintTableLine();
+    void PrintTableLine(bool theIsHexConfigId = true);
 
   };
 

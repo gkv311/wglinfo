@@ -111,10 +111,13 @@ void BaseGlContext::VisualInfo::PrintTableHeader(bool theHeader)
     std::cout << "\n";
 }
 
-void BaseGlContext::VisualInfo::PrintTableLine()
+void BaseGlContext::VisualInfo::PrintTableLine(bool theIsHexConfigId)
 {
-  std::cout << "0x" << std::hex << std::setw(3) << std::setfill('0') << ConfigId << std::dec << std::setfill(' ')
-            << " ";
+  if (theIsHexConfigId)
+    std::cout << "0x" << std::hex << std::setw(3) << std::setfill('0')
+              << ConfigId << std::dec << std::setfill(' ') << " ";
+  else
+    std::cout << std::setw(5) << ConfigId << " ";
 
   if (ColorDepth == 0 && ColorBufferSize != 0 && BufferType == ColorBuffer_Rgba)
   {

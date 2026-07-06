@@ -599,7 +599,7 @@ void WglContext::PrintVisuals(bool theIsVerbose)
 
     if (!theIsVerbose)
     {
-      anInfo.PrintTableLine();
+      anInfo.PrintTableLine(false);
       continue;
     }
 

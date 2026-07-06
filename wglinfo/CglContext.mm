@@ -460,7 +460,7 @@ void CglContext::PrintVisuals(bool theIsVerbose)
       anInfo.NbSampleBuffers = getAttrib(kCGLPFASampleBuffers);
       anInfo.NbSamples       = getAttrib(kCGLPFASamples);
 
-      anInfo.PrintTableLine();
+      anInfo.PrintTableLine(false);
       continue;
     }
 
