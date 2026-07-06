@@ -164,6 +164,8 @@ protected:
     int NbSampleBuffers = 0;
     int NbSamples = 0;
 
+    int NbLayers = 0;
+
   public:
     static void PrintTableHeader(bool theHeader);
 

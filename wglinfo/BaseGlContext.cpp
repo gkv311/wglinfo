@@ -114,7 +114,9 @@ void BaseGlContext::VisualInfo::PrintTableLine()
   if (ColorDepth == 0 && ColorBufferSize != 0 && BufferType == ColorBuffer_Rgba)
   {
     // color depth excluding alpha
-    if (AlphaSize == 2 && ColorBufferSize == 32)
+    if (RedSize != 0)
+      printInt3d(RedSize + GreenSize + BlueSize);
+    else if (AlphaSize == 2 && ColorBufferSize == 32)
       printInt3d(30);
     else if (AlphaSize == 8 && ColorBufferSize == 32)
       printInt3d(24);
@@ -163,7 +165,7 @@ void BaseGlContext::VisualInfo::PrintTableLine()
   std::cout << "  ";
 
   // double buffer
-  std::cout << (NbSwapBuffers > 0 ? 'y' : '.') << " ";
+  std::cout << (NbSwapBuffers >= 2 ? 'y' : '.') << " ";
 
   // stereo buffer
   std::cout << (IsStereoBuffer ? 'y' : '.') << "  ";

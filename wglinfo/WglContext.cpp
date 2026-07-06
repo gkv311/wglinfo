@@ -4,7 +4,7 @@
 
 #include "WglContext.h"
 
-#ifdef _WIN32
+#if defined(_WIN32)
 
 #include <GL/gl.h>
 
@@ -70,9 +70,14 @@ typedef BOOL(WINAPI *wglGetPixelFormatAttribivARB_t)(HDC hdc, int iPixelFormat, 
 typedef BOOL(WINAPI *wglGetPixelFormatAttribfvARB_t)(HDC hdc, int iPixelFormat, int iLayerPlane, UINT nAttributes, const int *piAttributes, FLOAT *pfValues);
 typedef HGLRC(WINAPI *wglCreateContextAttribsARB_t)(HDC theDevCtx, HGLRC theShareContext, const int* theAttribs);
 
+// WGL_EXT_colorspace
 #define WGL_COLORSPACE_EXT        0x309D
 #define WGL_COLORSPACE_SRGB_EXT   0x3089
 #define WGL_COLORSPACE_LINEAR_EXT 0x308A
+
+// WGL_EXT_multisample
+#define WGL_SAMPLE_BUFFERS_EXT 0x2041
+#define WGL_SAMPLES_EXT        0x2042
 
 typedef const char* (WINAPI *wglGetExtensionsStringARB_t)(HDC theDeviceContext);
 
@@ -372,114 +377,140 @@ void WglContext::PrintGpuMemoryInfo()
 
 void WglContext::PrintVisuals(bool theIsVerbose)
 {
-  wglGetPixelFormatAttribivARB_t aGetAttribIProc = NULL;
-  //wglGetPixelFormatAttribfvARB_t aGetAttribFProc = NULL;
+  /*std::string aWglExt;
+  {
+    const char* aWglExtRaw = NULL;
+    wglGetExtensionsStringARB_t wglGetExtensionsStringARB = nullptr;
+    if (FindProc("wglGetExtensionsStringARB", wglGetExtensionsStringARB))
+    {
+      if (aWglExtRaw = wglGetExtensionsStringARB(wglGetCurrentDC()))
+        aWglExt = aWglExtRaw;
+    }
+  }*/
+
+  wglGetPixelFormatAttribivARB_t aGetAttribIProc = nullptr;
+  //wglGetPixelFormatAttribfvARB_t aGetAttribFProc = nullptr;
   FindProc("wglGetPixelFormatAttribivARB", aGetAttribIProc);
   //FindProc("wglGetPixelFormatAttribfvARB", aGetAttribFProc);
 
-  const int aNbFormats = DescribePixelFormat(myDevCtx, 0, 0, NULL);
+  const int aNbFormats = DescribePixelFormat(myDevCtx, 0, 0, nullptr);
   std::cout << "\n[" << PlatformName() << "] " << aNbFormats << " WGL Visuals\n";
+
   if (!theIsVerbose)
-  {
-    std::cout << "    visual  x  bf lv rg d st  r  g  b a  ax dp st accum buffs  ms \n"
-                 "  id dep cl sp sz l  ci b ro sz sz sz sz bf th cl  r  g  b  a ns b rdr\n"
-                 "----------------------------------------------------------------------\n";
-  }
+    VisualInfo::PrintTableHeader(true);
 
   for (int aFormatIter = 1; aFormatIter <= aNbFormats; ++aFormatIter)
   {
-    PIXELFORMATDESCRIPTOR aFormat;
-    memset(&aFormat, 0, sizeof(aFormat));
+    PIXELFORMATDESCRIPTOR aFormat = {};
+    aFormat.nSize = (WORD)sizeof(PIXELFORMATDESCRIPTOR);
     DescribePixelFormat(myDevCtx, aFormatIter, sizeof(PIXELFORMATDESCRIPTOR), &aFormat);
     if ((aFormat.dwFlags & PFD_SUPPORT_OPENGL) == 0)
       continue;
 
-    const char* renderer = "gdi";
-    if      ((aFormat.dwFlags & PFD_GENERIC_FORMAT) == 0)      renderer = "icd";
-    else if ((aFormat.dwFlags & PFD_GENERIC_ACCELERATED) != 0) renderer = "mcd";
+    VisualInfo anInfo;
+    anInfo.ConfigId = aFormatIter;
 
-    if (theIsVerbose)
+    anInfo.ColorBufferSize = (int)aFormat.cColorBits;
+    if (aFormat.iPixelType == PFD_TYPE_RGBA)
     {
-      const char* aColorSpace = "";
-      if (aGetAttribIProc != NULL)
+      anInfo.RedSize   = (int)aFormat.cRedBits;
+      anInfo.GreenSize = (int)aFormat.cGreenBits;
+      anInfo.BlueSize  = (int)aFormat.cBlueBits;
+      anInfo.AlphaSize = (int)aFormat.cAlphaBits;
+    }
+    anInfo.DepthSize   = (int)aFormat.cDepthBits;
+    anInfo.StencilSize = (int)aFormat.cStencilBits;
+
+    if ((aFormat.dwFlags & PFD_GENERIC_FORMAT) != 0)
+      anInfo.ConfigCaveat = VisualInfo::Caveat_Slow;
+
+    anInfo.SurfaceType = VisualInfo::Surface_None;
+    if ((aFormat.dwFlags & PFD_DRAW_TO_WINDOW) != 0)
+      anInfo.SurfaceType = VisualInfo::Surface(anInfo.SurfaceType | VisualInfo::Surface_Window);
+    if ((aFormat.dwFlags & PFD_DRAW_TO_BITMAP) != 0)
+      anInfo.SurfaceType = VisualInfo::Surface(anInfo.SurfaceType | VisualInfo::Surface_Pixmap);
+
+    anInfo.BufferType = VisualInfo::ColorBuffer_Rgba;
+    if (aFormat.iPixelType == PFD_TYPE_RGBA)
+      anInfo.BufferType = VisualInfo::ColorBuffer_Rgba;
+    else if (aFormat.iPixelType == PFD_TYPE_COLORINDEX)
+      anInfo.BufferType = VisualInfo::ColorBuffer_ColorIndex;
+
+    anInfo.NbSwapBuffers  = (aFormat.dwFlags & PFD_DOUBLEBUFFER) != 0 ? 2 : 1;
+    anInfo.IsStereoBuffer = (aFormat.dwFlags & PFD_STEREO) != 0;
+
+    anInfo.NbAuxBuffers   = (int)aFormat.cAuxBuffers;
+    anInfo.AccumRedSize   = (int)aFormat.cAccumRedBits;
+    anInfo.AccumGreenSize = (int)aFormat.cAccumGreenBits;
+    anInfo.AccumBlueSize  = (int)aFormat.cAccumBlueBits;
+    anInfo.AccumAlphaSize = (int)aFormat.cAccumAlphaBits;
+
+    // bReserved indicates number of over/underlays
+    anInfo.NbLayers = (int)aFormat.bReserved;
+
+    const char* aColorSpace = "";
+    if (aGetAttribIProc != nullptr)
+    {
+      //if (hasExtension(aWglExt, "WGL_EXT_colorspace"))
       {
-        // fetch colorspace information using WGL_EXT_colorspace extension
         int aColorAttribs[1] = { WGL_COLORSPACE_EXT };
         int aColorSpaceInt[1] = { 0 };
         if (aGetAttribIProc(myDevCtx, aFormatIter, 0, 1, aColorAttribs, aColorSpaceInt))
         {
           aColorSpace = *aColorSpaceInt == WGL_COLORSPACE_SRGB_EXT
-                      ? ", sRGB"
-                      : (*aColorSpaceInt == WGL_COLORSPACE_LINEAR_EXT
-                      ? ", Linear"
-                      : ", Unknown");
+            ? ", sRGB"
+            : (*aColorSpaceInt == WGL_COLORSPACE_LINEAR_EXT
+               ? ", Linear"
+               : ", Unknown");
+          anInfo.IsSRgb = *aColorSpaceInt == WGL_COLORSPACE_SRGB_EXT;
         }
       }
+      //if (hasExtension(aWglExt, "WGL_EXT_multisample"))
+      {
+        int aSampleAttribs[2] = { WGL_SAMPLE_BUFFERS_EXT, WGL_SAMPLES_EXT };
+        int aSampleInfo[2] = { 0, 0 };
+        if (aGetAttribIProc(myDevCtx, aFormatIter, 0, 2, aSampleAttribs, aSampleInfo))
+        {
+          anInfo.NbSampleBuffers = aSampleInfo[0];
+          anInfo.NbSamples       = aSampleInfo[1];
+        }
+      }
+    }
 
-      const char* rendertarget = "bitmap";
-      if ((aFormat.dwFlags & (PFD_DRAW_TO_WINDOW | PFD_DRAW_TO_BITMAP)) == (PFD_DRAW_TO_WINDOW | PFD_DRAW_TO_BITMAP))
-        rendertarget = "window|bitmap";
-      else if ((aFormat.dwFlags & PFD_DRAW_TO_WINDOW) != 0)
-        rendertarget = "window";
+    const char* renderer = "";
+    if      ((aFormat.dwFlags & PFD_GENERIC_FORMAT) == 0)      renderer = "icd"; // hardware-accelerated
+    else if ((aFormat.dwFlags & PFD_GENERIC_ACCELERATED) != 0) renderer = "mcd"; // generic-accelerated
+    else                                                       renderer = "gdi"; // software
 
-      std::cout << "Visual ID: " << aFormatIter << "\n"
-                << "    color: R" << int(aFormat.cRedBits) << "G" << int(aFormat.cGreenBits) << "B" << int(aFormat.cBlueBits) << "A" << int(aFormat.cAlphaBits)
-                                  << " (" << getColorBufferClass(aFormat.cColorBits, aFormat.cRedBits) << ", " << int(aFormat.cColorBits)
-                                  << aColorSpace << ")"
-                                  << " depth: " << int(aFormat.cDepthBits) << " stencil: " << int(aFormat.cStencilBits) << "\n"
-                << "    doubleBuffer: " << ((aFormat.dwFlags & PFD_DOUBLEBUFFER) != 0)
-                                  << " stereo: " << ((aFormat.dwFlags & PFD_STEREO) != 0)
-                                  << " renderType: " << (aFormat.iPixelType == PFD_TYPE_RGBA ? "rgba" : "palette")
-                                  << " level: " << int(aFormat.bReserved) << "\n"
-                << "    auxBuffers: " << int(aFormat.cAuxBuffers)
-                                      << " accum: R" << int(aFormat.cAccumRedBits) << "G" << int(aFormat.cAccumGreenBits) << "B" << int(aFormat.cAccumBlueBits) << "A" << int(aFormat.cAccumAlphaBits)<< "\n"
-                << "    renderer: " << renderer << " target: " << rendertarget << "\n";
+    if (!theIsVerbose)
+    {
+      anInfo.PrintTableLine();
       continue;
     }
 
-    std::cout << "0x" << std::hex << std::setw(3) << std::setfill('0') << aFormatIter << std::dec << std::setfill(' ') << " ";
-    std::cout << std::setw(2) << (int)aFormat.cColorBits << " ";
+    const char* rendertarget = "bitmap";
+    if ((aFormat.dwFlags & (PFD_DRAW_TO_WINDOW | PFD_DRAW_TO_BITMAP)) == (PFD_DRAW_TO_WINDOW | PFD_DRAW_TO_BITMAP))
+      rendertarget = "window|bitmap";
+    else if ((aFormat.dwFlags & PFD_DRAW_TO_WINDOW) != 0)
+      rendertarget = "window";
 
-    std::cout << ((aFormat.dwFlags & (PFD_DRAW_TO_WINDOW | PFD_DRAW_TO_BITMAP)) == (PFD_DRAW_TO_WINDOW | PFD_DRAW_TO_BITMAP)
-              ? "wb "
-              : ((aFormat.dwFlags & PFD_DRAW_TO_WINDOW) != 0
-                ? "wn "
-                :  ((aFormat.dwFlags & PFD_DRAW_TO_BITMAP) != 0
-                ? "bm "
-                : ".  ")));
-
-    std::cout << " . " << std::setw(2) << (int)aFormat.cColorBits << " ";
-
-    // bReserved indicates number of over/underlays
-    if (aFormat.bReserved) std::cout << " " << (int)aFormat.bReserved << " ";
-    else                   std::cout << " . ";
-
-    std::cout << " " << (aFormat.iPixelType == PFD_TYPE_RGBA ? "r" : "c") << " "
-              <<  ((aFormat.dwFlags & PFD_DOUBLEBUFFER) != 0 ? 'y' : '.') << " "
-              << " " << ((aFormat.dwFlags & PFD_STEREO) != 0 ? 'y' : '.') << " ";
-    printInt2d(aFormat.cRedBits   && aFormat.iPixelType == PFD_TYPE_RGBA ? (int)aFormat.cRedBits : -1);
-    printInt2d(aFormat.cGreenBits && aFormat.iPixelType == PFD_TYPE_RGBA ? (int)aFormat.cGreenBits : -1);
-    printInt2d(aFormat.cBlueBits  && aFormat.iPixelType == PFD_TYPE_RGBA ? (int)aFormat.cBlueBits : -1);
-    printInt2d(aFormat.cAlphaBits && aFormat.iPixelType == PFD_TYPE_RGBA ? (int)aFormat.cAlphaBits : -1);
-    printInt2d(aFormat.cAuxBuffers     ? (int)aFormat.cAuxBuffers : -1);
-    printInt2d(aFormat.cDepthBits      ? (int)aFormat.cDepthBits : -1);
-    printInt2d(aFormat.cStencilBits    ? (int)aFormat.cStencilBits : -1);
-    printInt2d(aFormat.cAccumRedBits   ? (int)aFormat.cAccumRedBits : -1);
-    printInt2d(aFormat.cAccumGreenBits ? (int)aFormat.cAccumGreenBits : -1);
-    printInt2d(aFormat.cAccumBlueBits  ? (int)aFormat.cAccumBlueBits : -1);
-    printInt2d(aFormat.cAccumAlphaBits ? (int)aFormat.cAccumAlphaBits : -1);
-
-    std::cout << " . . " << renderer << "\n";
+    std::cout << "Visual ID: " << aFormatIter << "\n"
+              << "    color: R" << int(aFormat.cRedBits) << "G" << int(aFormat.cGreenBits) << "B" << int(aFormat.cBlueBits) << "A" << int(aFormat.cAlphaBits)
+                                << " (" << getColorBufferClass(aFormat.cColorBits, aFormat.cRedBits) << ", " << int(aFormat.cColorBits)
+                                << aColorSpace << ")"
+                                << " depth: " << int(aFormat.cDepthBits) << " stencil: " << int(aFormat.cStencilBits) << "\n"
+              << "    doubleBuffer: " << ((aFormat.dwFlags & PFD_DOUBLEBUFFER) != 0)
+                                << " stereo: " << ((aFormat.dwFlags & PFD_STEREO) != 0)
+                                << " renderType: " << (aFormat.iPixelType == PFD_TYPE_RGBA ? "rgba" : "palette")
+                                << " level: " << int(aFormat.bReserved) << "\n"
+              << "    auxBuffers: " << int(aFormat.cAuxBuffers)
+                                    << " accum: R" << int(aFormat.cAccumRedBits) << "G" << int(aFormat.cAccumGreenBits) << "B" << int(aFormat.cAccumBlueBits) << "A" << int(aFormat.cAccumAlphaBits)<< "\n"
+              << "    renderer: " << renderer << " target: " << rendertarget << "\n";
   }
 
   // table footer
   if (!theIsVerbose)
-  {
-    std::cout << "----------------------------------------------------------------------\n"
-                 "    visual  x  bf lv rg d st  r  g  b a  ax dp st accum buffs  ms  rdr\n"
-                 "  id dep cl sp sz l  ci b ro sz sz sz sz bf th cl  r  g  b  a ns b\n"
-                 "----------------------------------------------------------------------\n\n";
-  }
+    VisualInfo::PrintTableHeader(false);
 }
 
 #endif
