@@ -151,7 +151,8 @@ protected:
     int DepthSize = 0;
     int StencilSize = 0;
 
-    int  NbSwapBuffers = 1;
+    int  SwapIntervalMin = 0;
+    int  SwapIntervalMax = 0;
     bool IsStereoBuffer = false;
     bool IsSRgb = false;
 

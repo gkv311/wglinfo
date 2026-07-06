@@ -344,7 +344,8 @@ void GlxContext::PrintVisuals(bool theIsVerbose)
 
     int isDouble = 0;
     glXGetFBConfigAttrib(aDisp, anFBConfig, GLX_DOUBLEBUFFER, &isDouble);
-    anInfo.NbSwapBuffers = isDouble != 0 ? 2 : 1;
+    anInfo.SwapIntervalMin = 0;
+    anInfo.SwapIntervalMax = isDouble != 0 ? 1 : 0;
 
     int isStereo = 0;
     glXGetFBConfigAttrib(aDisp, anFBConfig, GLX_STEREO, &isStereo);

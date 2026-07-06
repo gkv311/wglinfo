@@ -435,11 +435,12 @@ void CglContext::PrintVisuals(bool theIsVerbose)
       anInfo.DepthSize       = getAttrib(kCGLPFADepthSize);
       anInfo.StencilSize     = getAttrib(kCGLPFAStencilSize);
 
-      anInfo.NbSwapBuffers = 1;
+      anInfo.SwapIntervalMin = 0;
+	  anInfo.SwapIntervalMax = 0;
       if (getAttrib(kCGLPFATripleBuffer) != 0)
-        anInfo.NbSwapBuffers = 3;
+        anInfo.SwapIntervalMax = 2;
       else if (getAttrib(kCGLPFADoubleBuffer) != 0)
-        anInfo.NbSwapBuffers = 2;
+        anInfo.SwapIntervalMax = 1;
 
       anInfo.IsStereoBuffer = getAttrib(kCGLPFAStereo) != 0;
       anInfo.IsColorFloat = getAttrib(kCGLPFAColorFloat) != 0;

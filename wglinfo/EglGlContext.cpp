@@ -156,6 +156,11 @@ template<typename FuncType_t> bool EglGlContext::findEglDllProc(const char* theF
 #define EGL_COLOR_COMPONENT_TYPE_FLOAT_EXT 0x333B
 #endif
 
+#ifndef EGL_MIN_SWAP_INTERVAL
+#define EGL_MIN_SWAP_INTERVAL             0x303B
+#define EGL_MAX_SWAP_INTERVAL             0x303C
+#endif
+
 void* EglGlContext::GlGetProcAddress(const char* theFuncName)
 {
 #ifdef _WIN32
@@ -503,6 +508,8 @@ void EglGlContext::PrintVisuals(bool theIsVerbose)
     EGLint DepthSize = 0;
     EGLint StencilSize = 0;
     EGLint ColorCompType = 0;
+    EGLint SwapIntervalMin = 0;
+    EGLint SwapIntervalMax = 0;
   };
 
   EGLint aNbConfigs = 0;
@@ -538,6 +545,8 @@ void EglGlContext::PrintVisuals(bool theIsVerbose)
     eglGetConfigAttrib(myEglDisp, aCfg, EGL_ALPHA_SIZE, &anAttribs.AlphaSize);
     eglGetConfigAttrib(myEglDisp, aCfg, EGL_DEPTH_SIZE, &anAttribs.DepthSize);
     eglGetConfigAttrib(myEglDisp, aCfg, EGL_STENCIL_SIZE, &anAttribs.StencilSize);
+    eglGetConfigAttrib(myEglDisp, aCfg, EGL_MIN_SWAP_INTERVAL, &anAttribs.SwapIntervalMin);
+    eglGetConfigAttrib(myEglDisp, aCfg, EGL_MAX_SWAP_INTERVAL, &anAttribs.SwapIntervalMax);
 
     // EGL_EXT_pixel_format_float
     if (hasExtPixFormatFloat)
@@ -581,7 +590,9 @@ void EglGlContext::PrintVisuals(bool theIsVerbose)
     anInfo.StencilSize     = (int)anAttribs.StencilSize;
 
     //
-    anInfo.NbSwapBuffers = 1;
+    anInfo.SwapIntervalMin = anAttribs.SwapIntervalMin;
+    anInfo.SwapIntervalMax = anAttribs.SwapIntervalMax;
+
     anInfo.IsStereoBuffer = false;
     // the colorspace is defined by EGL_GL_COLORSPACE_SRGB_KHR/EGL_GL_COLORSPACE_LINEAR_KHR
     // passed to eglCreateWindowSurface() and defined by existance of
@@ -603,9 +614,10 @@ void EglGlContext::PrintVisuals(bool theIsVerbose)
     }
 
     std::cout << "Config: " << aCfgIter << "\n"
-      << "    color: R" << int(anAttribs.RedSize) << "G" << int(anAttribs.GreenSize) << "B" << int(anAttribs.BlueSize) << "A" << int(anAttribs.AlphaSize)
-      << " (" << getColorBufferClass(anAttribs.ColorSize, anAttribs.RedSize) << ", " << int(anAttribs.ColorSize) << ")"
-      << " depth: " << int(anAttribs.DepthSize) << " stencil: " << int(anAttribs.StencilSize) << "\n";
+      << "    color: R" << anAttribs.RedSize << "G" << anAttribs.GreenSize << "B" << anAttribs.BlueSize << "A" << anAttribs.AlphaSize
+      << " (" << getColorBufferClass(anAttribs.ColorSize, anAttribs.RedSize) << ", " << anAttribs.ColorSize << ")"
+      << " depth: " << anAttribs.DepthSize << " stencil: " << anAttribs.StencilSize
+      << " swapInterval: " << anInfo.SwapIntervalMin << ".." << anInfo.SwapIntervalMax << "\n";
 
     switch (anAttribs.ConfigCaveat)
     {

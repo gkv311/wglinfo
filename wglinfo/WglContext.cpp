@@ -436,8 +436,9 @@ void WglContext::PrintVisuals(bool theIsVerbose)
     else if (aFormat.iPixelType == PFD_TYPE_COLORINDEX)
       anInfo.BufferType = VisualInfo::ColorBuffer_ColorIndex;
 
-    anInfo.NbSwapBuffers  = (aFormat.dwFlags & PFD_DOUBLEBUFFER) != 0 ? 2 : 1;
-    anInfo.IsStereoBuffer = (aFormat.dwFlags & PFD_STEREO) != 0;
+    anInfo.SwapIntervalMin = 0;
+    anInfo.SwapIntervalMax = (aFormat.dwFlags & PFD_DOUBLEBUFFER) != 0 ? 1 : 0;
+    anInfo.IsStereoBuffer  = (aFormat.dwFlags & PFD_STEREO) != 0;
 
     anInfo.NbAuxBuffers   = (int)aFormat.cAuxBuffers;
     anInfo.AccumRedSize   = (int)aFormat.cAccumRedBits;

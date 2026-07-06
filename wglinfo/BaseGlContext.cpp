@@ -165,7 +165,7 @@ void BaseGlContext::VisualInfo::PrintTableLine()
   std::cout << "  ";
 
   // double buffer
-  std::cout << (NbSwapBuffers >= 2 ? 'y' : '.') << " ";
+  std::cout << (SwapIntervalMax >= 1 ? 'y' : '.') << " ";
 
   // stereo buffer
   std::cout << (IsStereoBuffer ? 'y' : '.') << "  ";
