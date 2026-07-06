@@ -510,6 +510,10 @@ void EglGlContext::PrintVisuals(bool theIsVerbose)
     EGLint ColorCompType = 0;
     EGLint SwapIntervalMin = 0;
     EGLint SwapIntervalMax = 0;
+
+    EGLint NativeRenderable = 0;
+    EGLint NativeVisualId = 0;
+    EGLint NativeVisualType = 0;
   };
 
   EGLint aNbConfigs = 0;
@@ -551,6 +555,11 @@ void EglGlContext::PrintVisuals(bool theIsVerbose)
     // EGL_EXT_pixel_format_float
     if (hasExtPixFormatFloat)
       eglGetConfigAttrib(myEglDisp, aCfg, EGL_COLOR_COMPONENT_TYPE_EXT, &anAttribs.ColorCompType);
+
+    eglGetConfigAttrib(myEglDisp, aCfg, EGL_NATIVE_RENDERABLE,  &anAttribs.NativeRenderable);
+    eglGetConfigAttrib(myEglDisp, aCfg, EGL_NATIVE_VISUAL_ID,   &anAttribs.NativeVisualId);
+    eglGetConfigAttrib(myEglDisp, aCfg, EGL_NATIVE_VISUAL_TYPE, &anAttribs.NativeVisualType);
+
 
     VisualInfo anInfo;
     anInfo.ConfigId = anAttribs.ConfigId;
@@ -613,7 +622,7 @@ void EglGlContext::PrintVisuals(bool theIsVerbose)
       continue;
     }
 
-    std::cout << "Config: " << aCfgIter << "\n"
+    std::cout << "Config: " << aCfgIter << " (0x" << std::hex << anAttribs.ConfigId << std::dec << ")" << "\n"
       << "    color: R" << anAttribs.RedSize << "G" << anAttribs.GreenSize << "B" << anAttribs.BlueSize << "A" << anAttribs.AlphaSize
       << " (" << getColorBufferClass(anAttribs.ColorSize, anAttribs.RedSize) << ", " << anAttribs.ColorSize << ")"
       << " depth: " << anAttribs.DepthSize << " stencil: " << anAttribs.StencilSize
@@ -633,6 +642,10 @@ void EglGlContext::PrintVisuals(bool theIsVerbose)
         std::cout << "    caveat: " << std::hex << anAttribs.ConfigCaveat << std::dec <<  "\n";
         break;
     }
+
+    std::cout << "    nativeRenderable: " << anAttribs.NativeRenderable
+              << " visualID: " << anAttribs.NativeVisualId
+              << " visualType: " << anAttribs.NativeVisualType << "\n";
 
     std::cout << "    renderableTypes: " << ((anAttribs.RenderbableType & EGL_OPENGL_ES2_BIT) != 0 ? "GLES2 " : " ")
       << ((anAttribs.RenderbableType & EGL_OPENGL_ES3_BIT) != 0 ? "GLES3 " : " ")
