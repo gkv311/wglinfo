@@ -544,13 +544,20 @@ void EglGlContext::PrintVisuals(bool theIsVerbose)
       eglGetConfigAttrib(myEglDisp, aCfg, EGL_COLOR_COMPONENT_TYPE_EXT, &anAttribs.ColorCompType);
 
     VisualInfo anInfo;
-    anInfo.ConfigId = aCfgIter;
+    anInfo.ConfigId = anAttribs.ConfigId;
 
     anInfo.ConfigCaveat = VisualInfo::Caveat_None;
-    if ((anAttribs.ConfigCaveat & EGL_SLOW_CONFIG) != 0)
-      anInfo.ConfigCaveat = VisualInfo::Caveat(anInfo.ConfigCaveat | VisualInfo::Caveat_Slow);
-    if ((anAttribs.ConfigCaveat & EGL_NON_CONFORMANT_CONFIG) != 0)
-      anInfo.ConfigCaveat = VisualInfo::Caveat(anInfo.ConfigCaveat | VisualInfo::Caveat_NonConformant);
+    switch (anAttribs.ConfigCaveat)
+    {
+      case EGL_NONE:
+        break;
+      case EGL_SLOW_CONFIG:
+        anInfo.ConfigCaveat = VisualInfo::Caveat(anInfo.ConfigCaveat | VisualInfo::Caveat_Slow);
+        break;
+      case EGL_NON_CONFORMANT_CONFIG:
+        anInfo.ConfigCaveat = VisualInfo::Caveat(anInfo.ConfigCaveat | VisualInfo::Caveat_NonConformant);
+        break;
+    }
 
     if (anAttribs.BufferType == EGL_LUMINANCE_BUFFER)
       anInfo.BufferType = VisualInfo::ColorBuffer_Luminance;
@@ -598,10 +605,24 @@ void EglGlContext::PrintVisuals(bool theIsVerbose)
     std::cout << "Config: " << aCfgIter << "\n"
       << "    color: R" << int(anAttribs.RedSize) << "G" << int(anAttribs.GreenSize) << "B" << int(anAttribs.BlueSize) << "A" << int(anAttribs.AlphaSize)
       << " (" << getColorBufferClass(anAttribs.ColorSize, anAttribs.RedSize) << ", " << int(anAttribs.ColorSize) << ")"
-      << " depth: " << int(anAttribs.DepthSize) << " stencil: " << int(anAttribs.StencilSize) << "\n"
-      << "    caveat: " << ((anAttribs.ConfigCaveat & EGL_SLOW_CONFIG) != 0 ? "slow " : " ")
-      << ((anAttribs.ConfigCaveat & EGL_NON_CONFORMANT_CONFIG) != 0 ? "non-conformant" : " ") << "\n"
-      << "    renderableTypes: " << ((anAttribs.RenderbableType & EGL_OPENGL_ES2_BIT) != 0 ? "GLES2 " : " ")
+      << " depth: " << int(anAttribs.DepthSize) << " stencil: " << int(anAttribs.StencilSize) << "\n";
+
+    switch (anAttribs.ConfigCaveat)
+    {
+      case EGL_NONE:
+        break;
+      case EGL_SLOW_CONFIG:
+        std::cout << "    caveat: slow\n";
+        break;
+      case EGL_NON_CONFORMANT_CONFIG:
+        std::cout << "    caveat: non-conformant\n";
+        break;
+      default:
+        std::cout << "    caveat: " << std::hex << anAttribs.ConfigCaveat << std::dec <<  "\n";
+        break;
+    }
+
+    std::cout << "    renderableTypes: " << ((anAttribs.RenderbableType & EGL_OPENGL_ES2_BIT) != 0 ? "GLES2 " : " ")
       << ((anAttribs.RenderbableType & EGL_OPENGL_ES3_BIT) != 0 ? "GLES3 " : " ")
       << ((anAttribs.RenderbableType & EGL_OPENGL_BIT) != 0 ? "GL" : " ") << "\n";
   }
