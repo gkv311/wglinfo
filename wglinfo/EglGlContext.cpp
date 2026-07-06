@@ -149,6 +149,13 @@ template<typename FuncType_t> bool EglGlContext::findEglDllProc(const char* theF
 }
 #endif
 
+// EGL_EXT_pixel_format_float
+#ifndef EGL_COLOR_COMPONENT_TYPE_EXT
+#define EGL_COLOR_COMPONENT_TYPE_EXT       0x3339
+#define EGL_COLOR_COMPONENT_TYPE_FIXED_EXT 0x333A
+#define EGL_COLOR_COMPONENT_TYPE_FLOAT_EXT 0x333B
+#endif
+
 void* EglGlContext::GlGetProcAddress(const char* theFuncName)
 {
 #ifdef _WIN32
@@ -477,7 +484,7 @@ void EglGlContext::PrintPlatformInfo(bool theToPrintExtensions)
 void EglGlContext::PrintVisuals(bool theIsVerbose)
 {
 #ifdef _WIN32
-  if (myEglDll == NULL)
+  if (myEglDll == nullptr)
     return;
 #endif
 
@@ -495,13 +502,21 @@ void EglGlContext::PrintVisuals(bool theIsVerbose)
     EGLint AlphaSize = 0;
     EGLint DepthSize = 0;
     EGLint StencilSize = 0;
+    EGLint ColorCompType = 0;
   };
 
   EGLint aNbConfigs = 0;
-  eglGetConfigs(myEglDisp, NULL, 0, &aNbConfigs);
+  eglGetConfigs(myEglDisp, nullptr, 0, &aNbConfigs);
   std::vector<EGLConfig> aConfigs(aNbConfigs);
   if (eglGetConfigs(myEglDisp, aConfigs.data(), aNbConfigs, &aNbConfigs) != EGL_TRUE)
     return;
+
+  std::string anEglExt;
+  if (const char* anEglExtRaw = eglQueryString(myEglDisp, EGL_EXTENSIONS))
+    anEglExt = anEglExtRaw;
+
+  const bool hasExtPixFormatFloat = hasExtension(anEglExt, "EGL_EXT_pixel_format_float");
+  const bool hasExtGlColorspace   = hasExtension(anEglExt, "EGL_KHR_gl_colorspace");
 
   std::cout << "\n[" << PlatformName() << "] " << aNbConfigs << " EGL Configs\n";
   if (!theIsVerbose)
@@ -524,19 +539,9 @@ void EglGlContext::PrintVisuals(bool theIsVerbose)
     eglGetConfigAttrib(myEglDisp, aCfg, EGL_DEPTH_SIZE, &anAttribs.DepthSize);
     eglGetConfigAttrib(myEglDisp, aCfg, EGL_STENCIL_SIZE, &anAttribs.StencilSize);
 
-    if (theIsVerbose)
-    {
-      std::cout << "Config: " << aCfgIter << "\n"
-        << "    color: R" << int(anAttribs.RedSize) << "G" << int(anAttribs.GreenSize) << "B" << int(anAttribs.BlueSize) << "A" << int(anAttribs.AlphaSize)
-        << " (" << getColorBufferClass(anAttribs.ColorSize, anAttribs.RedSize) << ", " << int(anAttribs.ColorSize) << ")"
-        << " depth: " << int(anAttribs.DepthSize) << " stencil: " << int(anAttribs.StencilSize) << "\n"
-        << "    caveat: " << ((anAttribs.ConfigCaveat & EGL_SLOW_CONFIG) != 0 ? "slow " : " ")
-        << ((anAttribs.ConfigCaveat & EGL_NON_CONFORMANT_CONFIG) != 0 ? "non-conformant" : " ") << "\n"
-        << "    renderableTypes: " << ((anAttribs.RenderbableType & EGL_OPENGL_ES2_BIT) != 0 ? "GLES2 " : " ")
-        << ((anAttribs.RenderbableType & EGL_OPENGL_ES3_BIT) != 0 ? "GLES3 " : " ")
-        << ((anAttribs.RenderbableType & EGL_OPENGL_BIT) != 0 ? "GL" : " ") << "\n";
-      continue;
-    }
+    // EGL_EXT_pixel_format_float
+    if (hasExtPixFormatFloat)
+      eglGetConfigAttrib(myEglDisp, aCfg, EGL_COLOR_COMPONENT_TYPE_EXT, &anAttribs.ColorCompType);
 
     VisualInfo anInfo;
     anInfo.ConfigId = aCfgIter;
@@ -571,7 +576,11 @@ void EglGlContext::PrintVisuals(bool theIsVerbose)
     //
     anInfo.NbSwapBuffers = 1;
     anInfo.IsStereoBuffer = false;
-    anInfo.IsSRgb = false;
+    // the colorspace is defined by EGL_GL_COLORSPACE_SRGB_KHR/EGL_GL_COLORSPACE_LINEAR_KHR
+    // passed to eglCreateWindowSurface() and defined by existance of
+    // EGL_KHR_gl_colorspace and other extensions
+    anInfo.IsSRgb = hasExtGlColorspace;
+    anInfo.IsColorFloat = anAttribs.ColorCompType == EGL_COLOR_COMPONENT_TYPE_FLOAT_EXT;
 
     // dummy
     anInfo.NbAuxBuffers   = 0;
@@ -580,7 +589,21 @@ void EglGlContext::PrintVisuals(bool theIsVerbose)
     anInfo.AccumBlueSize  = 0;
     anInfo.AccumAlphaSize = 0;
 
-    anInfo.PrintTableLine();
+    if (!theIsVerbose)
+    {
+      anInfo.PrintTableLine();
+      continue;
+    }
+
+    std::cout << "Config: " << aCfgIter << "\n"
+      << "    color: R" << int(anAttribs.RedSize) << "G" << int(anAttribs.GreenSize) << "B" << int(anAttribs.BlueSize) << "A" << int(anAttribs.AlphaSize)
+      << " (" << getColorBufferClass(anAttribs.ColorSize, anAttribs.RedSize) << ", " << int(anAttribs.ColorSize) << ")"
+      << " depth: " << int(anAttribs.DepthSize) << " stencil: " << int(anAttribs.StencilSize) << "\n"
+      << "    caveat: " << ((anAttribs.ConfigCaveat & EGL_SLOW_CONFIG) != 0 ? "slow " : " ")
+      << ((anAttribs.ConfigCaveat & EGL_NON_CONFORMANT_CONFIG) != 0 ? "non-conformant" : " ") << "\n"
+      << "    renderableTypes: " << ((anAttribs.RenderbableType & EGL_OPENGL_ES2_BIT) != 0 ? "GLES2 " : " ")
+      << ((anAttribs.RenderbableType & EGL_OPENGL_ES3_BIT) != 0 ? "GLES3 " : " ")
+      << ((anAttribs.RenderbableType & EGL_OPENGL_BIT) != 0 ? "GL" : " ") << "\n";
   }
 
   // table footer
