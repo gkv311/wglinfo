@@ -23,9 +23,12 @@
 typedef const GLubyte* (GLAPIENTRY *glGetStringi_t) (GLenum name, GLuint index);
 
 // WGL_ARB_pixel_format
+#define WGL_NUMBER_PIXEL_FORMATS_ARB            0x2000
 #define WGL_DRAW_TO_WINDOW_ARB                  0x2001
 #define WGL_DRAW_TO_BITMAP_ARB                  0x2002
 #define WGL_ACCELERATION_ARB                    0x2003
+#define WGL_NUMBER_OVERLAYS_ARB                 0x2008
+#define WGL_NUMBER_UNDERLAYS_ARB                0x2009
 #define WGL_SUPPORT_GDI_ARB                     0x200F
 #define WGL_SUPPORT_OPENGL_ARB                  0x2010
 #define WGL_DOUBLE_BUFFER_ARB                   0x2011
@@ -34,13 +37,29 @@ typedef const GLubyte* (GLAPIENTRY *glGetStringi_t) (GLenum name, GLuint index);
 #define WGL_COLOR_BITS_ARB                      0x2014
 #define WGL_DEPTH_BITS_ARB                      0x2022
 #define WGL_STENCIL_BITS_ARB                    0x2023
-
+#define WGL_RED_BITS_ARB                        0x2015
+#define WGL_RED_SHIFT_ARB                       0x2016
+#define WGL_GREEN_BITS_ARB                      0x2017
+#define WGL_GREEN_SHIFT_ARB                     0x2018
+#define WGL_BLUE_BITS_ARB                       0x2019
+#define WGL_BLUE_SHIFT_ARB                      0x201A
+#define WGL_ALPHA_BITS_ARB                      0x201B
+#define WGL_ALPHA_SHIFT_ARB                     0x201C
+#define WGL_ACCUM_BITS_ARB                      0x201D
+#define WGL_ACCUM_RED_BITS_ARB                  0x201E
+#define WGL_ACCUM_GREEN_BITS_ARB                0x201F
+#define WGL_ACCUM_BLUE_BITS_ARB                 0x2020
+#define WGL_ACCUM_ALPHA_BITS_ARB                0x2021
+#define WGL_AUX_BUFFERS_ARB                     0x2024
 #define WGL_NO_ACCELERATION_ARB                 0x2025
 #define WGL_GENERIC_ACCELERATION_ARB            0x2026
 #define WGL_FULL_ACCELERATION_ARB               0x2027
 
 #define WGL_TYPE_RGBA_ARB                       0x202B
 #define WGL_TYPE_COLORINDEX_ARB                 0x202C
+
+// WGL_ARB_pixel_format_float
+#define WGL_TYPE_RGBA_FLOAT_ARB                 0x21A0
 
 // WGL_ARB_create_context_profile
 #define WGL_CONTEXT_MAJOR_VERSION_ARB           0x2091
@@ -377,111 +396,206 @@ void WglContext::PrintGpuMemoryInfo()
 
 void WglContext::PrintVisuals(bool theIsVerbose)
 {
-  /*std::string aWglExt;
+  std::string aWglExt;
+  wglGetExtensionsStringARB_t wglGetExtensionsStringARB = nullptr;
+  if (FindProc("wglGetExtensionsStringARB", wglGetExtensionsStringARB))
   {
-    const char* aWglExtRaw = NULL;
-    wglGetExtensionsStringARB_t wglGetExtensionsStringARB = nullptr;
-    if (FindProc("wglGetExtensionsStringARB", wglGetExtensionsStringARB))
-    {
-      if (aWglExtRaw = wglGetExtensionsStringARB(wglGetCurrentDC()))
-        aWglExt = aWglExtRaw;
-    }
-  }*/
+    if (const char* aWglExtRaw = wglGetExtensionsStringARB(myDevCtx))
+      aWglExt = aWglExtRaw;
+  }
+
+  const bool hasExtColorspace  = hasExtension(aWglExt, "WGL_EXT_colorspace");
+  const bool hasExtMultisample = hasExtension(aWglExt, "WGL_ARB_multisample")
+                              || hasExtension(aWglExt, "WGL_EXT_multisample");
 
   wglGetPixelFormatAttribivARB_t aGetAttribIProc = nullptr;
   //wglGetPixelFormatAttribfvARB_t aGetAttribFProc = nullptr;
   FindProc("wglGetPixelFormatAttribivARB", aGetAttribIProc);
   //FindProc("wglGetPixelFormatAttribfvARB", aGetAttribFProc);
+  const auto getAttrEx = [this, &aWglExt, aGetAttribIProc]
+    (int theFormat, int theAttr, int theDef = 0) -> int
+  {
+    if (aGetAttribIProc == nullptr)
+      return theDef;
 
-  const int aNbFormats = DescribePixelFormat(myDevCtx, 0, 0, nullptr);
-  std::cout << "\n[" << PlatformName() << "] " << aNbFormats << " WGL Visuals\n";
+    const int anAttribs[1] = { theAttr };
+    int       aValInt[1]   = { theDef };
+    if (aGetAttribIProc(myDevCtx, theFormat, 0, 1, anAttribs, aValInt))
+      return *aValInt;
+
+    printLastSystemError();
+    return theDef;
+  };
+
+  const int aNbFormatsBase = DescribePixelFormat(myDevCtx, 0, 0, nullptr);
+  const int aNbFormatsEx   = hasExtension(aWglExt, "WGL_ARB_pixel_format")
+                           ? getAttrEx(0, WGL_NUMBER_PIXEL_FORMATS_ARB)
+                           : 0;
+  const int aNbFormatsAll = max(aNbFormatsBase, aNbFormatsEx);
+
+  std::cout << "\n[" << PlatformName() << "] " << aNbFormatsAll << " WGL Visuals";
+  if (aNbFormatsEx > aNbFormatsBase)
+    std::cout << " (" << aNbFormatsBase << " basic + " << (aNbFormatsEx - aNbFormatsBase) << " extra)";
+
+  std::cout << "\n";
 
   if (!theIsVerbose)
     VisualInfo::PrintTableHeader(true);
 
-  for (int aFormatIter = 1; aFormatIter <= aNbFormats; ++aFormatIter)
+  for (int aFormatIter = 1; aFormatIter <= aNbFormatsAll; ++aFormatIter)
   {
-    PIXELFORMATDESCRIPTOR aFormat = {};
-    aFormat.nSize = (WORD)sizeof(PIXELFORMATDESCRIPTOR);
-    DescribePixelFormat(myDevCtx, aFormatIter, sizeof(PIXELFORMATDESCRIPTOR), &aFormat);
-    if ((aFormat.dwFlags & PFD_SUPPORT_OPENGL) == 0)
-      continue;
-
     VisualInfo anInfo;
     anInfo.ConfigId = aFormatIter;
+    anInfo.LayerLevel = 0;
 
-    anInfo.ColorBufferSize = (int)aFormat.cColorBits;
-    if (aFormat.iPixelType == PFD_TYPE_RGBA)
+    const char* anAccelStr = "";
+    if (aFormatIter > aNbFormatsBase)
     {
-      anInfo.RedSize   = (int)aFormat.cRedBits;
-      anInfo.GreenSize = (int)aFormat.cGreenBits;
-      anInfo.BlueSize  = (int)aFormat.cBlueBits;
-      anInfo.AlphaSize = (int)aFormat.cAlphaBits;
-    }
-    anInfo.DepthSize   = (int)aFormat.cDepthBits;
-    anInfo.StencilSize = (int)aFormat.cStencilBits;
+      if (aFormatIter == aNbFormatsBase + 1)
+        VisualInfo::PrintTableSeparator();
 
-    if ((aFormat.dwFlags & PFD_GENERIC_FORMAT) != 0)
-      anInfo.ConfigCaveat = VisualInfo::Caveat_Slow;
+      if (getAttrEx(aFormatIter, WGL_SUPPORT_OPENGL_ARB) == 0)
+        continue;
 
-    anInfo.SurfaceType = VisualInfo::Surface_None;
-    if ((aFormat.dwFlags & PFD_DRAW_TO_WINDOW) != 0)
-      anInfo.SurfaceType = VisualInfo::Surface(anInfo.SurfaceType | VisualInfo::Surface_Window);
-    if ((aFormat.dwFlags & PFD_DRAW_TO_BITMAP) != 0)
-      anInfo.SurfaceType = VisualInfo::Surface(anInfo.SurfaceType | VisualInfo::Surface_Pixmap);
+      anInfo.ColorBufferSize = getAttrEx(aFormatIter, WGL_COLOR_BITS_ARB);
 
-    anInfo.BufferType = VisualInfo::ColorBuffer_Rgba;
-    if (aFormat.iPixelType == PFD_TYPE_RGBA)
+      const int aPixType = getAttrEx(aFormatIter, WGL_PIXEL_TYPE_ARB);
+      anInfo.IsColorFloat = aPixType == WGL_TYPE_RGBA_FLOAT_ARB;
       anInfo.BufferType = VisualInfo::ColorBuffer_Rgba;
-    else if (aFormat.iPixelType == PFD_TYPE_COLORINDEX)
-      anInfo.BufferType = VisualInfo::ColorBuffer_ColorIndex;
+      if (aPixType == WGL_TYPE_COLORINDEX_ARB)
+        anInfo.BufferType = VisualInfo::ColorBuffer_ColorIndex;
+      else if (aPixType == WGL_TYPE_RGBA_ARB || aPixType == WGL_TYPE_RGBA_FLOAT_ARB)
+        anInfo.BufferType = VisualInfo::ColorBuffer_Rgba;
 
-    anInfo.SwapIntervalMin = 0;
-    anInfo.SwapIntervalMax = (aFormat.dwFlags & PFD_DOUBLEBUFFER) != 0 ? 1 : 0;
-    anInfo.IsStereoBuffer  = (aFormat.dwFlags & PFD_STEREO) != 0;
+      if (aPixType != WGL_TYPE_COLORINDEX_ARB)
+      {
+        anInfo.RedSize   = getAttrEx(aFormatIter, WGL_RED_BITS_ARB);
+        anInfo.GreenSize = getAttrEx(aFormatIter, WGL_GREEN_BITS_ARB);
+        anInfo.BlueSize  = getAttrEx(aFormatIter, WGL_BLUE_BITS_ARB);
+        anInfo.AlphaSize = getAttrEx(aFormatIter, WGL_ALPHA_BITS_ARB);
+      }
+      anInfo.DepthSize   = getAttrEx(aFormatIter, WGL_DEPTH_BITS_ARB);
+      anInfo.StencilSize = getAttrEx(aFormatIter, WGL_STENCIL_BITS_ARB);
 
-    anInfo.NbAuxBuffers   = (int)aFormat.cAuxBuffers;
-    anInfo.AccumRedSize   = (int)aFormat.cAccumRedBits;
-    anInfo.AccumGreenSize = (int)aFormat.cAccumGreenBits;
-    anInfo.AccumBlueSize  = (int)aFormat.cAccumBlueBits;
-    anInfo.AccumAlphaSize = (int)aFormat.cAccumAlphaBits;
+      anInfo.ConfigCaveat = VisualInfo::Caveat_None;
+      const int anAccel = getAttrEx(aFormatIter, WGL_ACCELERATION_ARB);
+      switch (anAccel)
+      {
+        case WGL_FULL_ACCELERATION_ARB:
+          anAccelStr = "icd";
+          break;
+        case WGL_GENERIC_ACCELERATION_ARB:
+          anAccelStr = "mcd";
+          anInfo.ConfigCaveat = VisualInfo::Caveat_Slow;
+          break;
+        case WGL_NO_ACCELERATION_ARB:
+          anAccelStr = "gdi";
+          anInfo.ConfigCaveat = VisualInfo::Caveat_Slow;
+          break;
+        default:
+          anAccelStr = "unknown";
+          anInfo.ConfigCaveat = VisualInfo::Caveat_Slow;
+          break;
+      }
 
-    // bReserved indicates number of over/underlays
-    anInfo.NbLayers = (int)aFormat.bReserved;
+      // extended pixel formats are "non displayable",
+      // hence window/bitmap bits are always zeros
+      anInfo.SurfaceType = VisualInfo::Surface_None;
+      if (getAttrEx(aFormatIter, WGL_DRAW_TO_WINDOW_ARB) != 0)
+        anInfo.SurfaceType = VisualInfo::Surface(anInfo.SurfaceType | VisualInfo::Surface_Window);
+      if (getAttrEx(aFormatIter, WGL_DRAW_TO_BITMAP_ARB) != 0)
+        anInfo.SurfaceType = VisualInfo::Surface(anInfo.SurfaceType | VisualInfo::Surface_Pixmap);
+
+      anInfo.SwapIntervalMin = 0;
+      anInfo.SwapIntervalMax = getAttrEx(aFormatIter, WGL_DOUBLE_BUFFER_ARB) != 0 ? 1 : 0;
+      anInfo.IsStereoBuffer  = getAttrEx(aFormatIter, WGL_STEREO_ARB) != 0;
+
+      anInfo.NbAuxBuffers    = getAttrEx(aFormatIter, WGL_AUX_BUFFERS_ARB);
+      //anInfo.AccumBufferSize = getAttrEx(aFormatIter, WGL_ACCUM_BITS_ARB);
+      anInfo.AccumRedSize    = getAttrEx(aFormatIter, WGL_ACCUM_RED_BITS_ARB);
+      anInfo.AccumGreenSize  = getAttrEx(aFormatIter, WGL_ACCUM_GREEN_BITS_ARB);
+      anInfo.AccumBlueSize   = getAttrEx(aFormatIter, WGL_ACCUM_BLUE_BITS_ARB);
+      anInfo.AccumAlphaSize  = getAttrEx(aFormatIter, WGL_ACCUM_ALPHA_BITS_ARB);
+
+      anInfo.NbLayersUnderlay = getAttrEx(aFormatIter, WGL_NUMBER_UNDERLAYS_ARB);
+      anInfo.NbLayersOverlay  = getAttrEx(aFormatIter, WGL_NUMBER_OVERLAYS_ARB);
+    }
+    else
+    {
+      PIXELFORMATDESCRIPTOR aFormat = {};
+      aFormat.nSize = (WORD)sizeof(PIXELFORMATDESCRIPTOR);
+      DescribePixelFormat(myDevCtx, aFormatIter, aFormat.nSize, &aFormat);
+      if ((aFormat.dwFlags & PFD_SUPPORT_OPENGL) == 0)
+        continue;
+
+      anInfo.ColorBufferSize = (int)aFormat.cColorBits;
+      if (aFormat.iPixelType != PFD_TYPE_COLORINDEX)
+      {
+        anInfo.RedSize   = (int)aFormat.cRedBits;
+        anInfo.GreenSize = (int)aFormat.cGreenBits;
+        anInfo.BlueSize  = (int)aFormat.cBlueBits;
+        anInfo.AlphaSize = (int)aFormat.cAlphaBits;
+      }
+      anInfo.DepthSize   = (int)aFormat.cDepthBits;
+      anInfo.StencilSize = (int)aFormat.cStencilBits;
+
+      if ((aFormat.dwFlags & PFD_GENERIC_FORMAT) != 0)
+        anInfo.ConfigCaveat = VisualInfo::Caveat_Slow;
+
+      anInfo.SurfaceType = VisualInfo::Surface_None;
+      if ((aFormat.dwFlags & PFD_DRAW_TO_WINDOW) != 0)
+        anInfo.SurfaceType = VisualInfo::Surface(anInfo.SurfaceType | VisualInfo::Surface_Window);
+      if ((aFormat.dwFlags & PFD_DRAW_TO_BITMAP) != 0)
+        anInfo.SurfaceType = VisualInfo::Surface(anInfo.SurfaceType | VisualInfo::Surface_Pixmap);
+
+      anInfo.BufferType = VisualInfo::ColorBuffer_Rgba;
+      if (aFormat.iPixelType == PFD_TYPE_RGBA)
+        anInfo.BufferType = VisualInfo::ColorBuffer_Rgba;
+      else if (aFormat.iPixelType == PFD_TYPE_COLORINDEX)
+        anInfo.BufferType = VisualInfo::ColorBuffer_ColorIndex;
+
+      anInfo.SwapIntervalMin = 0;
+      anInfo.SwapIntervalMax = (aFormat.dwFlags & PFD_DOUBLEBUFFER) != 0 ? 1 : 0;
+      anInfo.IsStereoBuffer  = (aFormat.dwFlags & PFD_STEREO) != 0;
+
+      anInfo.NbAuxBuffers   = (int)aFormat.cAuxBuffers;
+      anInfo.AccumRedSize   = (int)aFormat.cAccumRedBits;
+      anInfo.AccumGreenSize = (int)aFormat.cAccumGreenBits;
+      anInfo.AccumBlueSize  = (int)aFormat.cAccumBlueBits;
+      anInfo.AccumAlphaSize = (int)aFormat.cAccumAlphaBits;
+
+      // bits 0 through 3 specify up to 15 overlay planes,
+      // bits 4 through 7 specify up to 15 underlay planes
+      anInfo.NbLayersUnderlay = (aFormat.bReserved & 0x0F);
+      anInfo.NbLayersOverlay  = (aFormat.bReserved & 0xF0);
+
+      if ((aFormat.dwFlags & PFD_GENERIC_FORMAT) == 0)           anAccelStr = "icd"; // hardware-accelerated
+      else if ((aFormat.dwFlags & PFD_GENERIC_ACCELERATED) != 0) anAccelStr = "mcd"; // generic-accelerated
+      else                                                       anAccelStr = "gdi"; // software
+    }
 
     const char* aColorSpace = "";
     if (aGetAttribIProc != nullptr)
     {
-      //if (hasExtension(aWglExt, "WGL_EXT_colorspace"))
+      const int aColSpace = getAttrEx(aFormatIter, WGL_COLORSPACE_EXT);
+      anInfo.IsSRgb = hasExtColorspace && aColSpace == WGL_COLORSPACE_SRGB_EXT;
+      if (hasExtColorspace)
       {
-        int aColorAttribs[1] = { WGL_COLORSPACE_EXT };
-        int aColorSpaceInt[1] = { 0 };
-        if (aGetAttribIProc(myDevCtx, aFormatIter, 0, 1, aColorAttribs, aColorSpaceInt))
-        {
-          aColorSpace = *aColorSpaceInt == WGL_COLORSPACE_SRGB_EXT
-            ? ", sRGB"
-            : (*aColorSpaceInt == WGL_COLORSPACE_LINEAR_EXT
-               ? ", Linear"
-               : ", Unknown");
-          anInfo.IsSRgb = *aColorSpaceInt == WGL_COLORSPACE_SRGB_EXT;
-        }
+        aColorSpace = aColSpace == WGL_COLORSPACE_SRGB_EXT
+          ? ", sRGB"
+          : (aColSpace == WGL_COLORSPACE_LINEAR_EXT
+              ? ", Linear"
+              : ", Unknown");
       }
-      //if (hasExtension(aWglExt, "WGL_EXT_multisample"))
+      if (hasExtMultisample)
       {
-        int aSampleAttribs[2] = { WGL_SAMPLE_BUFFERS_EXT, WGL_SAMPLES_EXT };
-        int aSampleInfo[2] = { 0, 0 };
-        if (aGetAttribIProc(myDevCtx, aFormatIter, 0, 2, aSampleAttribs, aSampleInfo))
-        {
-          anInfo.NbSampleBuffers = aSampleInfo[0];
-          anInfo.NbSamples       = aSampleInfo[1];
-        }
+        anInfo.NbSampleBuffers = getAttrEx(aFormatIter, WGL_SAMPLE_BUFFERS_EXT);
+        anInfo.NbSamples       = getAttrEx(aFormatIter, WGL_SAMPLES_EXT);
       }
-    }
 
-    const char* renderer = "";
-    if      ((aFormat.dwFlags & PFD_GENERIC_FORMAT) == 0)      renderer = "icd"; // hardware-accelerated
-    else if ((aFormat.dwFlags & PFD_GENERIC_ACCELERATED) != 0) renderer = "mcd"; // generic-accelerated
-    else                                                       renderer = "gdi"; // software
+      const int aPixType = getAttrEx(aFormatIter, WGL_PIXEL_TYPE_ARB);
+      anInfo.IsColorFloat = aPixType == WGL_TYPE_RGBA_FLOAT_ARB;
+    }
 
     if (!theIsVerbose)
     {
@@ -489,24 +603,26 @@ void WglContext::PrintVisuals(bool theIsVerbose)
       continue;
     }
 
-    const char* rendertarget = "bitmap";
-    if ((aFormat.dwFlags & (PFD_DRAW_TO_WINDOW | PFD_DRAW_TO_BITMAP)) == (PFD_DRAW_TO_WINDOW | PFD_DRAW_TO_BITMAP))
-      rendertarget = "window|bitmap";
-    else if ((aFormat.dwFlags & PFD_DRAW_TO_WINDOW) != 0)
-      rendertarget = "window";
+    const char* aSurfTypeStr = "N/A";
+    if ((anInfo.SurfaceType & VisualInfo::Surface_Window) != 0)
+      aSurfTypeStr = (anInfo.SurfaceType & VisualInfo::Surface_Pixmap) != 0
+                   ? "window|bitmap"
+                   : "window";
+    else if ((anInfo.SurfaceType & VisualInfo::Surface_Pixmap) != 0)
+      aSurfTypeStr = "bitmap";
 
     std::cout << "Visual ID: " << aFormatIter << "\n"
-              << "    color: R" << int(aFormat.cRedBits) << "G" << int(aFormat.cGreenBits) << "B" << int(aFormat.cBlueBits) << "A" << int(aFormat.cAlphaBits)
-                                << " (" << getColorBufferClass(aFormat.cColorBits, aFormat.cRedBits) << ", " << int(aFormat.cColorBits)
+              << "    color: R" << anInfo.RedSize << "G" << anInfo.GreenSize << "B" << anInfo.BlueSize << "A" << anInfo.AlphaSize
+                                << " (" << getColorBufferClass(anInfo.ColorBufferSize, anInfo.RedSize) << ", " << anInfo.ColorBufferSize
                                 << aColorSpace << ")"
-                                << " depth: " << int(aFormat.cDepthBits) << " stencil: " << int(aFormat.cStencilBits) << "\n"
-              << "    doubleBuffer: " << ((aFormat.dwFlags & PFD_DOUBLEBUFFER) != 0)
-                                << " stereo: " << ((aFormat.dwFlags & PFD_STEREO) != 0)
-                                << " renderType: " << (aFormat.iPixelType == PFD_TYPE_RGBA ? "rgba" : "palette")
-                                << " level: " << int(aFormat.bReserved) << "\n"
-              << "    auxBuffers: " << int(aFormat.cAuxBuffers)
-                                    << " accum: R" << int(aFormat.cAccumRedBits) << "G" << int(aFormat.cAccumGreenBits) << "B" << int(aFormat.cAccumBlueBits) << "A" << int(aFormat.cAccumAlphaBits)<< "\n"
-              << "    renderer: " << renderer << " target: " << rendertarget << "\n";
+                                << " depth: " << anInfo.DepthSize << " stencil: " << anInfo.StencilSize << "\n"
+              << "    doubleBuffer: " << (anInfo.SwapIntervalMax >= 1)
+                                << " stereo: " << anInfo.IsStereoBuffer
+                                << " renderType: " << (anInfo.BufferType == VisualInfo::ColorBuffer_Rgba ? "rgba" : "palette")
+                                << " nbLayers: " << anInfo.NbLayersUnderlay << "+" << anInfo.NbLayersOverlay << "\n"
+              << "    auxBuffers: " << anInfo.NbAuxBuffers
+                                    << " accum: R" << anInfo.AccumRedSize << "G" << anInfo.AccumGreenSize << "B" << anInfo.AccumBlueSize << "A" << anInfo.AccumAlphaSize << "\n"
+              << "    renderer: " << anAccelStr << " target: " << aSurfTypeStr << "\n";
   }
 
   // table footer

@@ -91,16 +91,21 @@ const char* BaseGlContext::getColorBufferClass(int theNbColorBits, int theNbRedB
   return "TrueColor";
 }
 
+void BaseGlContext::VisualInfo::PrintTableSeparator()
+{
+  std::cout << "------------------------------------------------------------------------------\n";
+}
+
 void BaseGlContext::VisualInfo::PrintTableHeader(bool theHeader)
 {
   if (!theHeader)
   {
-    std::cout << "-----------------------------------------------------------------------------\n";
+    std::cout << "------------------------------------------------------------------------------\n";
   }
   {
-    std::cout << "    visual   x   bf lv rg d st  colorbuffer  sr ax dp st accumbuffer  ms  sw cav\n"
-                 "  id  dep cl sp  sz l  ci b ro  r  g  b  a F gb bf th cl  r  g  b  a ns b ap eat\n"
-                 "-----------------------------------------------------------------------------\n";
+    std::cout << "    visual   x   bf lv rg d st  colorbuffer  sr ax dp st accumbuffer  ms   sw cav\n"
+                 "  id  dep cl sp  sz l  ci b ro  r  g  b  a F gb bf th cl  r  g  b  a ns  b ap eat\n"
+                 "------------------------------------------------------------------------------\n";
   }
   if (!theHeader)
     std::cout << "\n";
@@ -190,8 +195,9 @@ void BaseGlContext::VisualInfo::PrintTableLine()
   printInt2d(AccumBlueSize,  0);
   printInt2d(AccumAlphaSize, 0);
 
-  // ms: ns b
-  std::cout << " " << NbSampleBuffers << " " << NbSamples << " ";
+  // ms: ns  b
+  std::cout << " " << NbSampleBuffers << " ";
+  printInt2d(NbSamples, -1);
 
   // swap
   std::cout << ".  ";

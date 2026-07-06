@@ -166,10 +166,13 @@ protected:
     int NbSampleBuffers = 0;
     int NbSamples = 0;
 
-    int NbLayers = 0;
+    int LayerLevel = 0; // 0 indicates main layer
+    int NbLayersUnderlay = 0;
+    int NbLayersOverlay = 0;
 
   public:
     static void PrintTableHeader(bool theHeader);
+    static void PrintTableSeparator();
 
     void PrintTableLine();
 

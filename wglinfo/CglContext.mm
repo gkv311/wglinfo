@@ -412,6 +412,8 @@ void CglContext::PrintVisuals(bool theIsVerbose)
     {
       VisualInfo anInfo;
       anInfo.ConfigId = aFormatIndex++;
+      /// TODO anInfo.LayerLevel = aPixIter
+      /// anInfo.NbLayersOverlay = aNbPixs
 
       anInfo.ConfigCaveat = VisualInfo::Caveat_None;
       if (getAttrib(kCGLPFAAccelerated) == 0)
