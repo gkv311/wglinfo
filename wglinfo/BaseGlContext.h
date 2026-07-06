@@ -144,6 +144,7 @@ protected:
 
     int ColorDepth = 0;
     int ColorBufferSize = 0;
+    int LuminanceSize = 0;
     int RedSize = 0;
     int GreenSize = 0;
     int BlueSize = 0;

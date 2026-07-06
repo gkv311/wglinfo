@@ -501,6 +501,7 @@ void EglGlContext::PrintVisuals(bool theIsVerbose)
     EGLint BufferType = 0;
     EGLint SurfaceType = 0;
     EGLint ColorSize = 0;
+    EGLint LuminanceSize = 0;
     EGLint RedSize = 0;
     EGLint GreenSize = 0;
     EGLint BlueSize = 0;
@@ -543,6 +544,7 @@ void EglGlContext::PrintVisuals(bool theIsVerbose)
     eglGetConfigAttrib(myEglDisp, aCfg, EGL_COLOR_BUFFER_TYPE, &anAttribs.BufferType);
     eglGetConfigAttrib(myEglDisp, aCfg, EGL_SURFACE_TYPE, &anAttribs.SurfaceType);
     eglGetConfigAttrib(myEglDisp, aCfg, EGL_BUFFER_SIZE, &anAttribs.ColorSize);
+    eglGetConfigAttrib(myEglDisp, aCfg, EGL_LUMINANCE_SIZE, &anAttribs.LuminanceSize);
     eglGetConfigAttrib(myEglDisp, aCfg, EGL_RED_SIZE, &anAttribs.RedSize);
     eglGetConfigAttrib(myEglDisp, aCfg, EGL_GREEN_SIZE, &anAttribs.GreenSize);
     eglGetConfigAttrib(myEglDisp, aCfg, EGL_BLUE_SIZE, &anAttribs.BlueSize);
@@ -591,6 +593,7 @@ void EglGlContext::PrintVisuals(bool theIsVerbose)
 
     anInfo.ColorDepth      = 0;
     anInfo.ColorBufferSize = (int)anAttribs.ColorSize;
+    anInfo.LuminanceSize   = (int)anAttribs.LuminanceSize;
     anInfo.RedSize         = (int)anAttribs.RedSize;
     anInfo.GreenSize       = (int)anAttribs.GreenSize;
     anInfo.BlueSize        = (int)anAttribs.BlueSize;
