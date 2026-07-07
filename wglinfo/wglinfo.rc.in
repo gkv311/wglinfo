@@ -11,8 +11,8 @@ CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "wglinfo.manifest"
 #define WGLINFO_RC_COMMENTS "@WGLINFO_RC_COMMENTS@"
 
 VS_VERSION_INFO VERSIONINFO
-FILEVERSION     25, 11, 0, 0
-PRODUCTVERSION  25, 11, 0, 0
+FILEVERSION     26, 7, 0, 0
+PRODUCTVERSION  26, 7, 0, 0
 FILEFLAGSMASK   VS_FFI_FILEFLAGSMASK
 FILEOS          VOS_NT
 FILETYPE        VFT_APP
@@ -22,10 +22,10 @@ BEGIN
   BEGIN BLOCK "040904E4" // Language type = U.S English(0x0409) and Character Set = Windows, Multilingual(0x04E4)
     BEGIN
       VALUE "FileDescription", "wglinfo\000"
-      VALUE "FileVersion", "26.2\000"
+      VALUE "FileVersion", "26.7\000"
       VALUE "LegalCopyright", L"\251 2018-2026 Kirill Gavrilov Tartynskih\000"
       VALUE "ProductName", "wglinfo\000"
-      VALUE "ProductVersion", "26.2" WGLINFO_RC_PRODUCTVERSION "\000"
+      VALUE "ProductVersion", "26.7" WGLINFO_RC_PRODUCTVERSION "\000"
       VALUE "OfficialSite", "www.sview.ru\000"
       VALUE "Contacts", "kirill@sview.ru\000"
       VALUE "Comments", WGLINFO_RC_COMMENTS "\000"
