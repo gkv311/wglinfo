@@ -431,7 +431,7 @@ void WglContext::PrintVisuals(bool theIsVerbose)
   const int aNbFormatsEx   = hasExtension(aWglExt, "WGL_ARB_pixel_format")
                            ? getAttrEx(0, WGL_NUMBER_PIXEL_FORMATS_ARB)
                            : 0;
-  const int aNbFormatsAll = max(aNbFormatsBase, aNbFormatsEx);
+  const int aNbFormatsAll = aNbFormatsEx > aNbFormatsBase ? aNbFormatsEx : aNbFormatsBase;
 
   std::cout << "\n[" << PlatformName() << "] " << aNbFormatsAll << " WGL Visuals";
   if (aNbFormatsEx > aNbFormatsBase)
