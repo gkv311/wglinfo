@@ -207,7 +207,7 @@ void BaseGlContext::VisualInfo::PrintTableLine(bool theIsHexConfigId)
 
   // caveat
   if (IsSoftware)
-    std::cout << "Soft ";
+    std::cout << "Software ";
   else if (ConfigCaveat == 0)
     std::cout << "None ";
 

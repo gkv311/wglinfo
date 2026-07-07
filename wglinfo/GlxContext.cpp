@@ -304,6 +304,19 @@ void GlxContext::PrintVisuals(bool theIsVerbose)
   if (const char* aGlxExtRaw = glXQueryExtensionsString(aDisp, aScreen))
     aGlxExt = aGlxExtRaw;
 
+  const bool hasExtFloat = hasExtension(aGlxExt, "GLX_ARB_fbconfig_float");
+  const bool hasExtSrgb  = hasExtension(aGlxExt, "GLX_EXT_framebuffer_sRGB");
+
+  unsigned int isMesaAccel = 1;
+#ifdef GLX_RENDERER_ACCELERATED_MESA
+  typedef Bool(*glXQueryRendererIntegerMESA_t)(Display *dpy, int screen, int renderer,
+                                               int attribute, unsigned int *value);
+  glXQueryRendererIntegerMESA_t aQueryRendererMesaI = nullptr;
+  if (hasExtension(aGlxExt, "GLX_MESA_query_renderer")
+   && FindProc("glXQueryRendererIntegerMESA", aQueryRendererMesaI))
+    aQueryRendererMesaI(aDisp, aScreen, 0, GLX_RENDERER_ACCELERATED_MESA, &isMesaAccel); // 0x8186
+#endif
+
   for (int aConfigIter = 0; aConfigIter < aFBCount; ++aConfigIter)
   {
     const GLXFBConfig anFBConfig = aFBCfgList[aConfigIter];
@@ -319,6 +332,9 @@ void GlxContext::PrintVisuals(bool theIsVerbose)
     glXGetFBConfigAttrib(aDisp, anFBConfig, GLX_ALPHA_SIZE,   &anInfo.AlphaSize);
     glXGetFBConfigAttrib(aDisp, anFBConfig, GLX_DEPTH_SIZE,   &anInfo.DepthSize);
     glXGetFBConfigAttrib(aDisp, anFBConfig, GLX_STENCIL_SIZE, &anInfo.StencilSize);
+
+    // just mark all formats
+    anInfo.IsSoftware = isMesaAccel == 0;
 
     int aCaveat = 0;
     glXGetFBConfigAttrib(aDisp, anFBConfig, GLX_CONFIG_CAVEAT, &aCaveat);
@@ -363,10 +379,10 @@ void GlxContext::PrintVisuals(bool theIsVerbose)
 
     int aRendType = 0;
     glXGetFBConfigAttrib(aDisp, anFBConfig, GLX_RENDER_TYPE, &aRendType);
-    if ((aRendType & GLX_RGBA_FLOAT_BIT_ARB) != 0 && hasExtension(aGlxExt, "GLX_ARB_fbconfig_float"))
+    if ((aRendType & GLX_RGBA_FLOAT_BIT_ARB) != 0 && hasExtFloat)
       anInfo.IsColorFloat = true;
 
-    if (hasExtension(aGlxExt, "GLX_EXT_framebuffer_sRGB"))
+    if (hasExtSrgb)
     {
       int isSRgb = 0;
       glXGetFBConfigAttrib(aDisp, anFBConfig, GLX_FRAMEBUFFER_SRGB_CAPABLE_EXT, &isSRgb);
