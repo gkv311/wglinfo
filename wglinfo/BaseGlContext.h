@@ -120,6 +120,7 @@ protected:
       Caveat_NonConformant = 0x02
     };
     Caveat ConfigCaveat = Caveat_None;
+    bool IsSoftware = false;
 
     //int RenderbableType;
 

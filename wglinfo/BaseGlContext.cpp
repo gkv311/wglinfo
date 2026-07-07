@@ -206,18 +206,16 @@ void BaseGlContext::VisualInfo::PrintTableLine(bool theIsHexConfigId)
   std::cout << ".  ";
 
   // caveat
-  if (ConfigCaveat == 0)
-  {
+  if (IsSoftware)
+    std::cout << "Soft ";
+  else if (ConfigCaveat == 0)
     std::cout << "None ";
-  }
-  else
-  {
-    if ((ConfigCaveat & Caveat_Slow) != 0)
-      std::cout << "Slow ";
 
-    if ((ConfigCaveat & Caveat_NonConformant) != 0)
-      std::cout << "NonConformant ";
-  }
+  if ((ConfigCaveat & Caveat_Slow) != 0)
+    std::cout << "Slow ";
+
+  if ((ConfigCaveat & Caveat_NonConformant) != 0)
+    std::cout << "NonConformant ";
 
   std::cout << "\n";
 }

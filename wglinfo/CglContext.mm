@@ -416,9 +416,7 @@ void CglContext::PrintVisuals(bool theIsVerbose)
       /// anInfo.NbLayersOverlay = aNbPixs
 
       anInfo.ConfigCaveat = VisualInfo::Caveat_None;
-      if (getAttrib(kCGLPFAAccelerated) == 0)
-        anInfo.ConfigCaveat = VisualInfo::Caveat(anInfo.ConfigCaveat | VisualInfo::Caveat_Slow);
-
+	  anInfo.IsSoftware = getAttrib(kCGLPFAAccelerated) == 0;
       anInfo.BufferType = VisualInfo::ColorBuffer_Rgba;
 
       if (getAttrib(kCGLPFAWindow) != 0)
@@ -486,7 +484,7 @@ void CglContext::PrintVisuals(bool theIsVerbose)
               << " depth: " << getAttrib(kCGLPFADepthSize) << " stencil: " << getAttrib(kCGLPFAStencilSize) << "\n"
               << "    doubleBuffer: " << (getAttrib(kCGLPFADoubleBuffer) != 0)
               << " stereo: " << (getAttrib(kCGLPFAStereo) != 0) << "\n"
-              << "    renderTarget: " << aRendTarget << " caveat: " << (getAttrib(kCGLPFAAccelerated) == 0 ? "slow " : "none ")
+              << "    renderTarget: " << aRendTarget << " caveat: " << (getAttrib(kCGLPFAAccelerated) == 0 ? "software " : "none ")
               << "\n"
               << "    profile: "
               << (getAttrib(kCGLPFAOpenGLProfile) == kCGLOGLPVersion_GL4_Core ? "OpenGL 4 Core Profile " : "")

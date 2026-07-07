@@ -477,8 +477,10 @@ void WglContext::PrintVisuals(bool theIsVerbose)
       anInfo.DepthSize   = getAttrEx(aFormatIter, WGL_DEPTH_BITS_ARB);
       anInfo.StencilSize = getAttrEx(aFormatIter, WGL_STENCIL_BITS_ARB);
 
-      anInfo.ConfigCaveat = VisualInfo::Caveat_None;
       const int anAccel = getAttrEx(aFormatIter, WGL_ACCELERATION_ARB);
+      anInfo.IsSoftware = anAccel == WGL_NO_ACCELERATION_ARB;
+
+      anInfo.ConfigCaveat = VisualInfo::Caveat_None;
       switch (anAccel)
       {
         case WGL_FULL_ACCELERATION_ARB:
@@ -490,11 +492,10 @@ void WglContext::PrintVisuals(bool theIsVerbose)
           break;
         case WGL_NO_ACCELERATION_ARB:
           anAccelStr = "gdi";
-          anInfo.ConfigCaveat = VisualInfo::Caveat_Slow;
           break;
         default:
           anAccelStr = "unknown";
-          anInfo.ConfigCaveat = VisualInfo::Caveat_Slow;
+          anInfo.ConfigCaveat = VisualInfo::Caveat_NonConformant;
           break;
       }
 
@@ -540,7 +541,7 @@ void WglContext::PrintVisuals(bool theIsVerbose)
       anInfo.StencilSize = (int)aFormat.cStencilBits;
 
       if ((aFormat.dwFlags & PFD_GENERIC_FORMAT) != 0)
-        anInfo.ConfigCaveat = VisualInfo::Caveat_Slow;
+        anInfo.IsSoftware = true;
 
       anInfo.SurfaceType = VisualInfo::Surface_None;
       if ((aFormat.dwFlags & PFD_DRAW_TO_WINDOW) != 0)
