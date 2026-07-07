@@ -226,12 +226,13 @@ void BaseGlContext::VisualInfo::PrintTableLine(bool theIsHexConfigId)
 static const int THE_LINE_LEN = 80;
 void BaseGlContext::printExtensions(const char* theExt)
 {
-  if (theExt == NULL)
+  if (theExt == nullptr)
   {
     std::cout << "    NULL.\n\n";
     return;
   }
 
+  std::stringstream aStr;
   int aStart = 0, aLineLen = 0;
   for (int aCharIter = 0;; ++aCharIter)
   {
@@ -242,37 +243,36 @@ void BaseGlContext::printExtensions(const char* theExt)
       const int aLen = aCharIter - aStart;
       for (; theExt[aCharIter] == ' '; ++aCharIter) {} // skip extra spaces
       if (theExt[aCharIter] == '\0')
-      {
         toBreak = true;
-      }
 
       if (aLen > 0)
       {
         if (aLineLen != 0 && aLineLen + aLen + 2 > THE_LINE_LEN)
         {
-          std::cout << "\n";
+          aStr << "\n";
           aLineLen = 0;
         }
         if (aLineLen == 0)
         {
           aLineLen += 4;
-          std::cout << "    ";
+          aStr << "    ";
         }
         else
         {
           aLineLen += 1;
-          std::cout << " ";
+          aStr << " ";
         }
 
         aLineLen += aLen + 1;
-        std::cout.write(theExt + aStart, aLen);
-        std::cout << (toBreak ? "." : ",");
+        aStr.write(theExt + aStart, aLen);
+        aStr << (toBreak ? "." : ",");
       }
       aStart = aCharIter;
     }
     if (toBreak)
     {
-      std::cout << "\n\n";
+      aStr << "\n";
+      std::cout << aStr.str() << std::endl;
       return;
     }
   }
@@ -410,7 +410,10 @@ void BaseGlContext::printLimitIntRange(unsigned int theGlEnum, const char* theNa
   if (GlGetError() != GL_NO_ERROR)
     return;
 
-  std::cout << "  " << theName << " = " << aVal[0] << ", " << aVal[1] << "\n";
+  std::stringstream aStr;
+  aStr << "  " << theName << " = " << aVal[0] << ", " << aVal[1];
+
+  std::cout << aStr.str() << std::endl;
 }
 
 #define LimitIntValue(theId) LimitDefinition(#theId, theId, 1)
@@ -488,7 +491,8 @@ void BaseGlContext::PrintLimits()
   if (GlGetError() != GL_NO_ERROR || aNbVers == 0)
     return;
 
-  std::cout << "  GL_SHADING_LANGUAGE_VERSION =";
+  std::stringstream aStr;
+  aStr << "  GL_SHADING_LANGUAGE_VERSION =";
   size_t aLineLen = THE_LINE_LEN * 2;
   for (int aVerIter = 0; aVerIter < aNbVers; ++aVerIter)
   {
@@ -496,14 +500,15 @@ void BaseGlContext::PrintLimits()
     aLineLen += aName.length();
     if (aLineLen > THE_LINE_LEN)
     {
-      std::cout << "\n    ";
+      aStr << "\n    ";
       aLineLen = aName.length() + 4;
     }
     else if (aVerIter > 0)
     {
-      std::cout << ", ";
+      aStr << ", ";
     }
-    std::cout << aName;
+    aStr << aName;
   }
-  std::cout << "\n";
+
+  std::cout << aStr.str() << std::endl;
 }
