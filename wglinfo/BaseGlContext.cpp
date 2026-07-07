@@ -78,19 +78,19 @@ const char* BaseGlContext::getColorBufferClass(int theNbColorBits, int theNbRedB
 
 void BaseGlContext::VisualInfo::PrintTableSeparator()
 {
-  std::cout << "------------------------------------------------------------------------------\n";
+  std::cout << "------------------------------------------------------------------------\n";
 }
 
 void BaseGlContext::VisualInfo::PrintTableHeader(bool theHeader)
 {
   if (!theHeader)
   {
-    std::cout << "------------------------------------------------------------------------------\n";
+    std::cout << "------------------------------------------------------------------------\n";
   }
   {
-    std::cout << "    visual   x   bf lv rg d st  colorbuffer  sr ax dp st accumbuffer  ms   sw cav\n"
-                 "  id  dep cl sp  sz l  ci b ro  r  g  b  a F gb bf th cl  r  g  b  a ns  b ap eat\n"
-                 "------------------------------------------------------------------------------\n";
+    std::cout << "    visual    bf lv rg d st  colorbuffer  sr ax dp st accumbuffer  ms   cav\n"
+                 "  id  dep cl  sz l  ci b ro  r  g  b  a F gb bf th cl  r  g  b  a ns  b eat\n"
+                 "------------------------------------------------------------------------\n";
   }
   if (!theHeader)
     std::cout << std::endl;
@@ -161,7 +161,7 @@ void BaseGlContext::VisualInfo::PrintTableLine(bool theIsHexConfigId)
   }
 
   // x sp
-  aStr << " . ";
+  //aStr << " . ";
 
   // color buffer size
   printInt3d(ColorBufferSize);
@@ -209,7 +209,7 @@ void BaseGlContext::VisualInfo::PrintTableLine(bool theIsHexConfigId)
   printInt2d(NbSamples, -1);
 
   // swap
-  aStr << ".  ";
+  //aStr << ".  ";
 
   // caveat
   if (IsSoftware)
