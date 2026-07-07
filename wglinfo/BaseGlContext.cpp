@@ -6,6 +6,7 @@
 
 #include <iomanip>
 #include <iostream>
+#include <sstream>
 
 #define GL_NO_ERROR   0
 #define GL_VENDOR     0x1F00
@@ -65,22 +66,6 @@ void BaseGlContext::SoftMesaSentry::Reset()
 #endif
 }
 
-void BaseGlContext::printInt2d(int theInt, int theNA)
-{
-  if (theInt <= theNA)
-    std::cout << " . ";
-  else
-    std::cout << std::setw(2) << theInt << " ";
-}
-
-void BaseGlContext::printInt3d(int theInt)
-{
-  if (theInt < 0)
-    std::cout << "  . ";
-  else
-    std::cout << std::setw(3) << theInt << " ";
-}
-
 const char* BaseGlContext::getColorBufferClass(int theNbColorBits, int theNbRedBits)
 {
   if (theNbColorBits <= 8)
@@ -108,16 +93,34 @@ void BaseGlContext::VisualInfo::PrintTableHeader(bool theHeader)
                  "------------------------------------------------------------------------------\n";
   }
   if (!theHeader)
-    std::cout << "\n";
+    std::cout << std::endl;
 }
 
 void BaseGlContext::VisualInfo::PrintTableLine(bool theIsHexConfigId)
 {
+  std::stringstream aStr;
+
+  const auto printInt2d = [&aStr](int theInt, int theNA = -1) -> void
+  {
+    if (theInt <= theNA)
+      aStr << " . ";
+    else
+      aStr << std::setw(2) << theInt << " ";
+  };
+
+  const auto printInt3d = [&aStr](int theInt) -> void
+  {
+    if (theInt < 0)
+      aStr << "  . ";
+    else
+      aStr << std::setw(3) << theInt << " ";
+  };
+
   if (theIsHexConfigId)
-    std::cout << "0x" << std::hex << std::setw(3) << std::setfill('0')
-              << ConfigId << std::dec << std::setfill(' ') << " ";
+    aStr << "0x" << std::hex << std::setw(3) << std::setfill('0')
+         << ConfigId << std::dec << std::setfill(' ') << " ";
   else
-    std::cout << std::setw(5) << ConfigId << " ";
+    aStr << std::setw(5) << ConfigId << " ";
 
   if (ColorDepth == 0 && ColorBufferSize != 0 && BufferType == ColorBuffer_Rgba)
   {
@@ -140,43 +143,43 @@ void BaseGlContext::VisualInfo::PrintTableLine(bool theIsHexConfigId)
   {
     if ((SurfaceType & Surface_Pixmap) != 0 || (SurfaceType & Surface_PBuffer) != 0
         || (SurfaceType & Surface_PBufferRemote) != 0)
-      std::cout << "wb ";
+      aStr << "wb ";
     else
-      std::cout << "wn ";
+      aStr << "wn ";
   }
   else if ((SurfaceType & Surface_Pixmap) != 0 || (SurfaceType & Surface_PBuffer) != 0
            || (SurfaceType & Surface_PBufferRemote) != 0)
   {
-    std::cout << "bm ";
+    aStr << "bm ";
   }
   else
   {
-    std::cout << " . ";
+    aStr << " . ";
   }
 
   // x sp
-  std::cout << " . ";
+  aStr << " . ";
 
   // color buffer size
   printInt3d(ColorBufferSize);
 
   // number of over/underlays
-  std::cout << " . ";
+  aStr << " . ";
 
   // color type
   switch (BufferType)
   {
-    case ColorBuffer_ColorIndex: std::cout << 'i'; break;
-    case ColorBuffer_Luminance:  std::cout << 'l'; break;
-    case ColorBuffer_Rgba:       std::cout << 'r'; break;
+    case ColorBuffer_ColorIndex: aStr << 'i'; break;
+    case ColorBuffer_Luminance:  aStr << 'l'; break;
+    case ColorBuffer_Rgba:       aStr << 'r'; break;
   }
-  std::cout << "  ";
+  aStr << "  ";
 
   // double buffer
-  std::cout << (SwapIntervalMax >= 1 ? 'y' : '.') << " ";
+  aStr << (SwapIntervalMax >= 1 ? 'y' : '.') << " ";
 
   // stereo buffer
-  std::cout << (IsStereoBuffer ? 'y' : '.') << "  ";
+  aStr << (IsStereoBuffer ? 'y' : '.') << "  ";
 
   // RGBA components bits
   printInt2d(RedSize,   BufferType != ColorBuffer_Rgba ? 0 : -1);
@@ -184,9 +187,9 @@ void BaseGlContext::VisualInfo::PrintTableLine(bool theIsHexConfigId)
   printInt2d(BlueSize,  BufferType != ColorBuffer_Rgba ? 0 : -1);
   printInt2d(AlphaSize, BufferType != ColorBuffer_Rgba ? 0 : -1);
   // float
-  std::cout << (IsColorFloat ? 'y' : '.') << " ";
+  aStr << (IsColorFloat ? 'y' : '.') << " ";
   // srgb
-  std::cout << " " << (IsSRgb ? 's' : '.') << " ";
+  aStr << " " << (IsSRgb ? 's' : '.') << " ";
 
   printInt2d(NbAuxBuffers, 0);
   printInt2d(DepthSize);
@@ -199,25 +202,25 @@ void BaseGlContext::VisualInfo::PrintTableLine(bool theIsHexConfigId)
   printInt2d(AccumAlphaSize, 0);
 
   // ms: ns  b
-  std::cout << " " << NbSampleBuffers << " ";
+  aStr << " " << NbSampleBuffers << " ";
   printInt2d(NbSamples, -1);
 
   // swap
-  std::cout << ".  ";
+  aStr << ".  ";
 
   // caveat
   if (IsSoftware)
-    std::cout << "Software ";
+    aStr << "Software ";
   else if (ConfigCaveat == 0)
-    std::cout << "None ";
+    aStr << "None ";
 
   if ((ConfigCaveat & Caveat_Slow) != 0)
-    std::cout << "Slow ";
+    aStr << "Slow ";
 
   if ((ConfigCaveat & Caveat_NonConformant) != 0)
-    std::cout << "NonConformant ";
+    aStr << "NonConformant ";
 
-  std::cout << "\n";
+  std::cout << aStr.str() << std::endl;
 }
 
 static const int THE_LINE_LEN = 80;
