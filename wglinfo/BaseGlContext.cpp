@@ -116,7 +116,10 @@ void BaseGlContext::VisualInfo::PrintTableLine(bool theIsHexConfigId)
       aStr << std::setw(3) << theInt << " ";
   };
 
-  if (theIsHexConfigId)
+  if (theIsHexConfigId && ConfigId >= 0x1000)
+    aStr << std::hex << std::setw(5) << std::setfill('0')
+         << ConfigId << std::dec << std::setfill(' ') << " ";
+  else if (theIsHexConfigId)
     aStr << "0x" << std::hex << std::setw(3) << std::setfill('0')
          << ConfigId << std::dec << std::setfill(' ') << " ";
   else
