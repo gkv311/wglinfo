@@ -396,6 +396,9 @@ void WglContext::PrintGpuMemoryInfo()
 
 void WglContext::PrintVisuals(bool theIsVerbose)
 {
+  if (myDevCtx == nullptr)
+    return;
+
   std::string aWglExt;
   wglGetExtensionsStringARB_t wglGetExtensionsStringARB = nullptr;
   if (FindProc("wglGetExtensionsStringARB", wglGetExtensionsStringARB))

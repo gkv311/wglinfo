@@ -245,6 +245,8 @@ void GlxContext::PrintPlatformInfo(bool theToPrintExtensions)
 {
   Display*  aDisp   = (Display*)myWin.GetDisplay();
   const int aScreen = DefaultScreen(aDisp);
+  if (aDisp == nullptr)
+    return;
 
   std::cout << "[" << PlatformName() << "] GLXDirectRendering: " << (glXIsDirect(aDisp, (GLXContext )myRendCtx) ? "Yes" : "No") << "\n";
   std::cout << "[" << PlatformName() << "] GLXVendor:          " << glXQueryServerString(aDisp, aScreen, GLX_VENDOR) << "\n";
@@ -292,6 +294,8 @@ void GlxContext::PrintVisuals(bool theIsVerbose)
 
   Display*  aDisp = (Display*)myWin.GetDisplay();
   const int aScreen = DefaultScreen(aDisp);
+  if (aDisp == nullptr)
+    return;
 
   int          aFBCount = 0;
   GLXFBConfig* aFBCfgList = glXGetFBConfigs(aDisp, aScreen, &aFBCount);

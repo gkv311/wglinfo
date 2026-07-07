@@ -488,10 +488,16 @@ void EglGlContext::PrintPlatformInfo(bool theToPrintExtensions)
 
 void EglGlContext::PrintVisuals(bool theIsVerbose)
 {
+  if (myEglDisp == EGL_NO_DISPLAY)
+    return;
+
 #ifdef _WIN32
   if (myEglDll == nullptr)
     return;
 #endif
+
+  // poor solution to detect software OpenGL implementation
+  const bool isSoftMesa = SoftMesaSentry::IsSoftContext(*this);
 
   struct EGLConfigAttribs
   {
@@ -566,6 +572,7 @@ void EglGlContext::PrintVisuals(bool theIsVerbose)
     VisualInfo anInfo;
     anInfo.ConfigId = anAttribs.ConfigId;
 
+    anInfo.IsSoftware   = isSoftMesa;
     anInfo.ConfigCaveat = VisualInfo::Caveat_None;
     switch (anAttribs.ConfigCaveat)
     {
