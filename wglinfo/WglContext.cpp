@@ -100,17 +100,21 @@ typedef HGLRC(WINAPI *wglCreateContextAttribsARB_t)(HDC theDevCtx, HGLRC theShar
 
 typedef const char* (WINAPI *wglGetExtensionsStringARB_t)(HDC theDeviceContext);
 
-static void printLastSystemError()
+static bool printLastSystemError(bool theToPrintSuccess = false)
 {
-  char* aMsgBuff = NULL;
-  DWORD anErrorCode = GetLastError();
+  const DWORD anErrorCode = GetLastError();
+  if (!theToPrintSuccess && anErrorCode == 0)
+    return false;
+
+  char* aMsgBuff = nullptr;
   FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                 NULL, anErrorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (char*)&aMsgBuff, 0, NULL);
-  if (aMsgBuff != NULL)
+                 nullptr, anErrorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (char*)&aMsgBuff, 0, nullptr);
+  if (aMsgBuff != nullptr)
   {
     std::cerr << aMsgBuff << "\n";
     LocalFree(aMsgBuff);
   }
+  return anErrorCode != 0;
 }
 
 WglContext::WglContext(const std::string& theTitle)
