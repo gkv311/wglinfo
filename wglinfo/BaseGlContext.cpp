@@ -78,7 +78,7 @@ const char* BaseGlContext::getColorBufferClass(int theNbColorBits, int theNbRedB
 
 void BaseGlContext::VisualInfo::PrintTableSeparator()
 {
-  std::cout << "------------------------------------------------------------------------\n";
+  std::cout << "  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - \n";
 }
 
 void BaseGlContext::VisualInfo::PrintTableHeader(bool theHeader)
