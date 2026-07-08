@@ -83,17 +83,21 @@ void BaseGlContext::VisualInfo::PrintTableSeparator()
 
 void BaseGlContext::VisualInfo::PrintTableHeader(bool theHeader)
 {
-  if (!theHeader)
+  if (theHeader)
   {
-    std::cout << "------------------------------------------------------------------------\n";
-  }
-  {
-    std::cout << "    visual    bf lv rg d st  colorbuffer  sr ax dp st accumbuffer  ms   cav\n"
+    std::cout << "      visual  bf lv rg d st  colorbuffer  sr ax dp st accumbuffer msaa  cav\n"
                  "  id  dep cl  sz l  ci b ro  r  g  b  a F gb bf th cl  r  g  b  a ns  b eat\n"
-                 "------------------------------------------------------------------------\n";
+                 "------------------------------------------------------------------------"
+              << std::endl;
   }
-  if (!theHeader)
-    std::cout << std::endl;
+  else
+  {
+    std::cout << "------------------------------------------------------------------------\n"
+                 "  id  dep cl  bf lv rg d st  r  g  b  a F sr ax dp st  r  g  b  a ns  b cav\n"
+                 "      visual  sz l  ci b ro  colorbuffer  gb bf th cl accumbuffer msaa  eat\n"
+                 "------------------------------------------------------------------------\n"
+              << std::endl;
+  }
 }
 
 void BaseGlContext::VisualInfo::PrintTableLine(bool theIsHexConfigId)
