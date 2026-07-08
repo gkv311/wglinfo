@@ -87,6 +87,50 @@ jobs:
         path: wglinfo-install
         if-no-files-found: error
 
+  # build using MSVC with WGLINFO_FORCE_DISCRETE_GPU flag
+  build-msvc-dgpu:
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x86_64]
+    runs-on: windows-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+      with:
+        path: wglinfo.git
+        fetch-depth: 1
+    - name: Setup MSVC
+      if: matrix.arch != 'arm32'
+      uses: ilammy/msvc-dev-cmd@v1.13.0
+      with:
+        arch: 'x86_64'
+    - name: Configure wglinfo
+      shell: cmd
+      run: |
+        cmake -G Ninja -S ./wglinfo.git -B ./wglinfo-make ^
+          -D CMAKE_BUILD_TYPE=Release ^
+          -D CMAKE_INSTALL_PREFIX="%CD%/wglinfo-install" ^
+          -D BUILD_TREAT_WARNINGS_AS_ERRORS=ON ^
+          -D BUILD_DESC_ARCH="${{ matrix.arch }}" ^
+          -D CMAKE_CXX_FLAGS="-DWGLINFO_FORCE_DISCRETE_GPU"
+    - name: Build wglinfo
+      run: |
+        cmake --build ./wglinfo-make
+    - name: Install wglinfo
+      run: |
+        cmake --install ./wglinfo-make --prefix ./wglinfo-install
+        mv .\wglinfo-install\wglinfo.exe .\wglinfo-install\wglinfo-dgpu.exe
+    - name: Run wglinfo (WGL)
+      run: |
+        .\wglinfo-install\wglinfo-dgpu.exe
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v6
+      with:
+        name: wglinfo-windows-${{ matrix.arch }}-dgpu-msvc
+        path: wglinfo-install
+        if-no-files-found: error
+
   # cross-compile on Linux using MinGW toolchain (older GCC + MSVCRT)
   build-mingw:
     runs-on: ubuntu-24.04

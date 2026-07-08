@@ -19,6 +19,18 @@
 #include <string>
 #include <vector>
 
+// On multi-vendor-GPU notebooks, these flags could be used to ask driver
+// to prefer discrete GPU over slower integrated one.
+// This, however, doesn't work well nowadays and Windows settings
+// should be used to customize each app behavior instead.
+//#define WGLINFO_FORCE_DISCRETE_GPU
+#if defined(WGLINFO_FORCE_DISCRETE_GPU) && defined(_WIN32)
+// Exporting this symbol from .exe with value=1 will direct to NVIDIA GPU on Optimus systems
+extern "C" __declspec(dllexport) unsigned long NvOptimusEnablement = 1;
+// Exporting this symbol from .exe with value=1 will direct to faster GPU on AMD PowerXpress systems
+extern "C" __declspec(dllexport) unsigned long AmdPowerXpressRequestHighPerformance = 1;
+#endif
+
 //! Information tool.
 class WglInfo
 {
@@ -516,7 +528,11 @@ const char* WglInfo::getArchString()
 
 void WglInfo::printSystemInfo()
 {
-  std::cout << "wglinfo " << getArchString() << " (built with ";
+  std::cout << "wglinfo " << getArchString();
+#if defined(WGLINFO_FORCE_DISCRETE_GPU)
+  std::cout << " [dgpu]";
+#endif
+  std::cout << " (built with ";
 #if defined(__INTEL_COMPILER)
   std::cout << "Intel " << __INTEL_COMPILER << "";
 #elif defined(__BORLANDC__)
