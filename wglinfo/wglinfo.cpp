@@ -40,7 +40,7 @@ private:
   bool parseArguments(int theNbArgs, const char** theArgVec);
 
   //! Print help message.
-  void printHelp(const char* theName);
+  void printHelp(const char* theName, bool theIsVersion = false);
 
   //! Print WGL info.
   template<class Platform_t>
@@ -357,6 +357,11 @@ bool WglInfo::parseArguments(int theNbArgs, const char** theArgVec)
       printHelp(theArgVec[0]);
       return false;
     }
+    else if (anArg == "--version")
+    {
+      printHelp(theArgVec[0], true);
+      return false;
+    }
     else
     {
       std::cerr << "Syntax error! Unknown argument '" << theArgVec[anArgIter] << "'\n\n";
@@ -368,13 +373,11 @@ bool WglInfo::parseArguments(int theNbArgs, const char** theArgVec)
   return true;
 }
 
-void WglInfo::printHelp(const char* theName)
+void WglInfo::printHelp(const char* theName, bool theIsVersion)
 {
   std::string aName = theName;
   if (aName.size() > 4 && aName.substr(aName.size() - 4) == ".exe")
-  {
     aName = aName.substr(0, aName.size() - 4);
-  }
 
   static const char aPlatforms[] =
 #ifdef _WIN32
@@ -389,26 +392,35 @@ void WglInfo::printHelp(const char* theName)
     "EGL|GLX";
 #endif
 
-  std::cout << "Usage: " << aName << " [-v] [-h] [--platform {" << aPlatforms << "}]=*\n"
-    "               [--api {GL|GLES}]=* [--profile {core|compat|soft}]=*\n"
-    "               [--first] [--gpumemory]\n"
-    "               [--novisuals] [--noextensions] [--norenderer] [--noplatform]\n"
-    "  -B             Brief output, print only the basics.\n"
-    "  -v             Print visuals info in verbose form.\n"
-    "  -h             This information.\n"
-    "  --platform     Platform (" << aPlatforms << ") to create context;\n"
-    "                 by default main platforms will be evaluated.\n"
-    "  --api          Api (OpenGL or OpenGL ES) to create context;\n"
-    "                 by default all available APIs will be evaluated.\n"
-    "  --profile      Profile to create OpenGL context;\n"
-    "                 by default several main profiles will be evaluated.\n"
-    "  --first        Print only first context.\n"
-    "  --gpumemory    Print only GPU memory info (suppresses all other info).\n"
-    "  --noplatform   Do not print platform (EGL|WGL|GLX|CGL etc.) info.\n"
-    "  --norenderer   Do not print renderer info.\n"
-    "  --noextensions Do not list extensions.\n"
-    "  --novisuals    Do not list visuals, same as -B.\n"
-    "This wglinfo tool variation has been created by Kirill Gavrilov Tartynskih <kirill@sview.ru>\n";
+  if (theIsVersion)
+  {
+    std::cout << aName <<  " version: " << "26.07" << "\n";
+  }
+  else
+  {
+    std::cout <<
+      "Usage: " << aName << " [-v] [-h] [--platform {" << aPlatforms << "}]=*\n"
+      "               [--api {GL|GLES}]=* [--profile {core|compat|soft}]=*\n"
+      "               [--first] [--gpumemory]\n"
+      "               [--novisuals] [--noextensions] [--norenderer] [--noplatform]\n"
+      "  -B             Brief output, print only the basics.\n"
+      "  -v             Print visuals info in verbose form.\n"
+      "  -h             This information.\n"
+      "  --platform     Platform (" << aPlatforms << ") to create context;\n"
+      "                 by default main platforms will be evaluated.\n"
+      "  --api          Api (OpenGL or OpenGL ES) to create context;\n"
+      "                 by default all available APIs will be evaluated.\n"
+      "  --profile      Profile to create OpenGL context;\n"
+      "                 by default several main profiles will be evaluated.\n"
+      "  --first        Print only first context.\n"
+      "  --gpumemory    Print only GPU memory info (suppresses all other info).\n"
+      "  --noplatform   Do not print platform (EGL|WGL|GLX|CGL etc.) info.\n"
+      "  --norenderer   Do not print renderer info.\n"
+      "  --noextensions Do not list extensions.\n"
+      "  --novisuals    Do not list visuals, same as -B.\n";
+    }
+
+    std::cout << "This wglinfo tool variation has been created by Kirill Gavrilov Tartynskih <kirill@sview.ru>\n";
 }
 
 template<class Platform_t>
