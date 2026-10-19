@@ -585,7 +585,7 @@ void WglContext::PrintVisuals(bool theIsVerbose)
     const char* aColorSpace = "";
     if (aGetAttribIProc != nullptr)
     {
-      const int aColSpace = getAttrEx(aFormatIter, WGL_COLORSPACE_EXT);
+      const int aColSpace = hasExtColorspace ? getAttrEx(aFormatIter, WGL_COLORSPACE_EXT) : -1;
       anInfo.IsSRgb = hasExtColorspace && aColSpace == WGL_COLORSPACE_SRGB_EXT;
       if (hasExtColorspace)
       {
